@@ -1,25 +1,37 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { CssBaseline } from '@mui/material';
+import { ClerkProvider } from './contexts/ClerkProvider';
+import { QueryProvider } from './contexts/QueryProvider';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { PerformanceMonitor } from './components/common/PerformanceMonitor';
+import { FocusManager } from './components/common/FocusManager';
+import { AppRouter } from './router/AppRouter';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ErrorBoundary>
+      <PerformanceMonitor>
+        <ClerkProvider>
+          <QueryProvider>
+            <NotificationProvider>
+              <ThemeProvider>
+                <CssBaseline />
+                <FocusManager
+                  skipLinks={[
+                    { href: '#main-content', label: 'Skip to main content' },
+                    { href: '#navigation', label: 'Skip to navigation' },
+                  ]}
+                >
+                  <AppRouter />
+                </FocusManager>
+              </ThemeProvider>
+            </NotificationProvider>
+          </QueryProvider>
+        </ClerkProvider>
+      </PerformanceMonitor>
+    </ErrorBoundary>
   );
 }
 

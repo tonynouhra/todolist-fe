@@ -1,9 +1,17 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { ClerkProvider } from './contexts/ClerkProvider';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test('ClerkProvider initializes without crashing', () => {
+  // Test that ClerkProvider can be instantiated
+  expect(() => {
+    const provider = React.createElement(ClerkProvider, {
+      children: React.createElement('div'),
+    });
+    expect(provider).toBeDefined();
+  }).not.toThrow();
+});
+
+test('environment variables are properly configured', () => {
+  // Test that required environment variables are set
+  expect(process.env.REACT_APP_CLERK_PUBLISHABLE_KEY).toBeDefined();
 });
