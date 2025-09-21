@@ -59,6 +59,11 @@ const getWillChangeProperties = (
   }
 };
 
+let persistedLayoutState: Pick<
+  LayoutState,
+  'sidebarOpen' | 'showDesktopFooter'
+> | null = null;
+
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -79,13 +84,48 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const mainContentRef = useRef<HTMLElement | null>(null);
 
   // Enhanced state management with breakpoint tracking
-  const [layoutState, setLayoutState] = useState<LayoutState>({
-    sidebarOpen: !isMobile,
-    isTransitioning: false,
-    showDesktopFooter: false,
-    previousIsMobile: isMobile,
-    transitionType: null,
-  });
+  const initialLayoutState = React.useMemo<LayoutState>(() => {
+    if (persistedLayoutState) {
+      return {
+        sidebarOpen: persistedLayoutState.sidebarOpen ?? !isMobile,
+        showDesktopFooter: persistedLayoutState.showDesktopFooter ?? false,
+        isTransitioning: false,
+        previousIsMobile: isMobile,
+        transitionType: null,
+      };
+    }
+    return {
+      sidebarOpen: !isMobile,
+      isTransitioning: false,
+      showDesktopFooter: false,
+      previousIsMobile: isMobile,
+      transitionType: null,
+    };
+  }, [isMobile]);
+
+  const [layoutStateBase, setLayoutStateBase] =
+    useState<LayoutState>(initialLayoutState);
+
+  const layoutState = layoutStateBase;
+
+  const setLayoutState = useCallback(
+    (updater: React.SetStateAction<LayoutState>) => {
+      setLayoutStateBase((prev) => {
+        const next =
+          typeof updater === 'function'
+            ? (updater as (prev: LayoutState) => LayoutState)(prev)
+            : updater;
+
+        persistedLayoutState = {
+          sidebarOpen: next.sidebarOpen,
+          showDesktopFooter: next.showDesktopFooter,
+        };
+
+        return next;
+      });
+    },
+    []
+  );
 
   const sidebarWidth = 280;
 
@@ -182,11 +222,19 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     isMobile,
     layoutState.previousIsMobile,
     adaptiveAnimationConfig.duration.content,
+    setLayoutState,
   ]);
 
   useEffect(() => {
     handleBreakpointChange();
   }, [handleBreakpointChange]);
+
+  // Ensure mobile sidebar closes after navigation changes to avoid reopening
+  useEffect(() => {
+    if (isMobile && layoutState.sidebarOpen) {
+      setLayoutState((prev) => ({ ...prev, sidebarOpen: false }));
+    }
+  }, [isMobile, layoutState.sidebarOpen, location.pathname, setLayoutState]);
 
   // Enhanced window resize handling for smooth responsive behavior during screen size changes
   useEffect(() => {
@@ -290,6 +338,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     layoutState.isTransitioning,
     layoutState.transitionType,
     theme.breakpoints.values.md,
+    setLayoutState,
   ]);
 
   // Enhanced footer visibility management with improved responsive behavior and better breakpoint handling
@@ -379,6 +428,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     adaptiveAnimationConfig.delays.footerShow,
     adaptiveAnimationConfig.duration.footer,
     theme.breakpoints.values.md,
+    setLayoutState,
   ]);
 
   useEffect(() => {
@@ -436,7 +486,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         fallbackSidebarToggle
       );
     });
-  }, [layoutState.isTransitioning, layoutState.sidebarOpen, isMobile]);
+  }, [
+    layoutState.isTransitioning,
+    layoutState.sidebarOpen,
+    isMobile,
+    setLayoutState,
+  ]);
 
   // Enhanced transition management with proper cleanup and focus restoration
   const manageTransitionState = useCallback(() => {
@@ -473,6 +528,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     layoutState.isTransitioning,
     layoutState.transitionType,
     adaptiveAnimationConfig,
+    setLayoutState,
   ]);
 
   useEffect(() => {
@@ -507,6 +563,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   // Only show FAB on todos page
   const shouldShowFAB = !isMobile && location.pathname === '/todos';
+
+  const handleFooterNavigate = useCallback(() => {
+    setLayoutState((prev) => ({
+      ...prev,
+      sidebarOpen: false,
+      showDesktopFooter: true,
+    }));
+  }, [setLayoutState]);
 
   // Debug logging
   console.log('AppLayout render:', {
@@ -772,7 +836,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       {/* Desktop footer navigation - shows when sidebar is closed on desktop */}
       {!isMobile && (
-        <DesktopFooterNavigation visible={layoutState.showDesktopFooter} />
+        <DesktopFooterNavigation
+          visible={layoutState.showDesktopFooter}
+          onNavigate={handleFooterNavigate}
+        />
       )}
 
       {/* Add Todo FAB - shows only on todos page */}

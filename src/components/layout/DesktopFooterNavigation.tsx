@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -239,6 +239,8 @@ const DesktopFooterNavigationComponent: React.FC<
                 }}
               >
                 <IconButton
+                  component={Link}
+                  to={item.path}
                   onClick={() => handleNavigation(item.path)}
                   onKeyDown={(event) =>
                     handleKeyDown(event, item.path, item.text)

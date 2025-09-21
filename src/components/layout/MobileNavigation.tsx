@@ -23,7 +23,7 @@ export const MobileNavigation: React.FC = () => {
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     const item = navigationItems[newValue];
     if (!item.disabled) {
-      navigate(item.path);
+      navigate(item.path, { replace: item.path === location.pathname });
     }
   };
 
@@ -74,7 +74,7 @@ export const MobileNavigation: React.FC = () => {
         role="tablist"
         aria-label="Main navigation tabs"
       >
-        {navigationItems.map((item, index) => (
+        {navigationItems.map((item) => (
           <BottomNavigationAction
             key={item.path}
             label={item.text}

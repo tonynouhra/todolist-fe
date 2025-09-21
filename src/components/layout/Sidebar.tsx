@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Drawer,
   List,
@@ -159,6 +159,8 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         {navigationItems.map((item, index) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
+              component={Link}
+              to={item.path}
               selected={isNavigationItemActive(item, location.pathname)}
               onClick={() => handleNavigation(item.path, item.disabled)}
               disabled={item.disabled}
