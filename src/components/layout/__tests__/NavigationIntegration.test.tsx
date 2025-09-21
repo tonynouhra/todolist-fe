@@ -467,7 +467,7 @@ describe('Navigation Integration Tests', () => {
 
       // Focus menu button
       menuButton.focus();
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
 
       // Toggle sidebar
       await user.click(menuButton);
@@ -478,7 +478,7 @@ describe('Navigation Integration Tests', () => {
       });
 
       // Focus should be restored
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
     });
 
     it('does not interfere with user focus changes', async () => {
@@ -501,7 +501,7 @@ describe('Navigation Integration Tests', () => {
       });
 
       // Focus should remain where user put it
-      expect(document.activeElement).toBe(mainContent);
+      expect(mainContent).toHaveFocus();
     });
   });
 
@@ -643,10 +643,10 @@ describe('Navigation Integration Tests', () => {
 
       // Tab through interface
       menuButton.focus();
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
 
       await user.tab();
-      expect(document.activeElement).toBe(dashboardNav);
+      expect(dashboardNav).toHaveFocus();
     });
   });
 

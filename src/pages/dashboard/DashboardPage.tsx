@@ -68,7 +68,11 @@ export const DashboardPage: React.FC = () => {
   const completedTodos =
     todosData?.data?.filter((todo) => todo.status === 'done').length || 0;
   const pendingTodos = totalTodos - completedTodos;
-  const totalProjects = projectsData?.total || 0;
+  const projects = Array.isArray(projectsData?.data) ? projectsData.data : [];
+  const totalProjects =
+    typeof projectsData?.total === 'number'
+      ? projectsData.total
+      : projects.length;
 
   return (
     <AppLayout>
@@ -178,9 +182,9 @@ export const DashboardPage: React.FC = () => {
                   <Typography variant="h6" gutterBottom>
                     Recent Projects
                   </Typography>
-                  {projectsData?.data && projectsData.data.length > 0 ? (
+                  {projects.length > 0 ? (
                     <Box>
-                      {projectsData.data.slice(0, 5).map((project) => (
+                      {projects.slice(0, 5).map((project) => (
                         <Box
                           key={project.id}
                           sx={{

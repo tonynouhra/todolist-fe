@@ -324,13 +324,13 @@ describe('DesktopFooterNavigation', () => {
 
       // Tab through items
       dashboardButton.focus();
-      expect(document.activeElement).toBe(dashboardButton);
+      expect(dashboardButton).toHaveFocus();
 
       await user.tab();
-      expect(document.activeElement).toBe(todosButton);
+      expect(todosButton).toHaveFocus();
 
       await user.tab();
-      expect(document.activeElement).toBe(projectsButton);
+      expect(projectsButton).toHaveFocus();
     });
 
     it('supports arrow key navigation within footer', async () => {
@@ -343,23 +343,23 @@ describe('DesktopFooterNavigation', () => {
 
       // Focus first button
       dashboardButton.focus();
-      expect(document.activeElement).toBe(dashboardButton);
+      expect(dashboardButton).toHaveFocus();
 
       // Arrow right to next button
       await user.keyboard('{ArrowRight}');
-      expect(document.activeElement).toBe(todosButton);
+      expect(todosButton).toHaveFocus();
 
       // Arrow right to next button
       await user.keyboard('{ArrowRight}');
-      expect(document.activeElement).toBe(projectsButton);
+      expect(projectsButton).toHaveFocus();
 
       // Arrow right should wrap to first button
       await user.keyboard('{ArrowRight}');
-      expect(document.activeElement).toBe(dashboardButton);
+      expect(dashboardButton).toHaveFocus();
 
       // Arrow left should wrap to last button
       await user.keyboard('{ArrowLeft}');
-      expect(document.activeElement).toBe(projectsButton);
+      expect(projectsButton).toHaveFocus();
     });
 
     it('announces navigation changes to screen readers', async () => {
@@ -408,19 +408,18 @@ describe('DesktopFooterNavigation', () => {
       renderComponent();
 
       // Check for hidden description element
-      const description = document.getElementById('footer-nav-description');
-      expect(description).toBeInTheDocument();
-      expect(description).toHaveTextContent(
+      const description = screen.getByText(
         'Use arrow keys to navigate between options, Enter or Space to select'
       );
+      expect(description).toHaveAttribute('id', 'footer-nav-description');
 
       // Check individual item descriptions
-      const dashboardDescription = document.getElementById(
-        '/dashboard-description'
-      );
-      expect(dashboardDescription).toBeInTheDocument();
-      expect(dashboardDescription).toHaveTextContent(
+      const dashboardDescription = screen.getByText(
         'Navigate to Dashboard page'
+      );
+      expect(dashboardDescription).toHaveAttribute(
+        'id',
+        '/dashboard-description'
       );
     });
 

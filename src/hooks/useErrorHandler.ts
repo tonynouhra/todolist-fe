@@ -8,7 +8,7 @@ import {
 import { useAuth } from '@clerk/clerk-react';
 
 export const useErrorHandler = () => {
-  const { showError, showWarning } = useNotification();
+  const { showError, showWarning, showSuccess } = useNotification();
   const { signOut } = useAuth();
 
   const handleError = useCallback(
@@ -37,10 +37,12 @@ export const useErrorHandler = () => {
     [showError, showWarning, signOut]
   );
 
-  const handleSuccess = useCallback((message: string) => {
-    const { showSuccess } = useNotification();
-    showSuccess(message);
-  }, []);
+  const handleSuccess = useCallback(
+    (message: string) => {
+      showSuccess(message);
+    },
+    [showSuccess]
+  );
 
   return {
     handleError,

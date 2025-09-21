@@ -671,7 +671,7 @@ describe('AppLayout', () => {
 
       // Focus the menu button
       menuButton.focus();
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
 
       // Toggle sidebar
       await user.click(menuButton);
@@ -683,7 +683,7 @@ describe('AppLayout', () => {
 
       // Focus should be restored to menu button if it's still the active element
       // (In real scenarios, this depends on whether user moved focus elsewhere)
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
     });
 
     it('does not restore focus if user has moved focus elsewhere', async () => {
@@ -706,7 +706,7 @@ describe('AppLayout', () => {
       });
 
       // Focus should remain on the element user focused on
-      expect(document.activeElement).toBe(mainContent);
+      expect(mainContent).toHaveFocus();
     });
 
     it('stores and restores focus properly', async () => {
@@ -728,7 +728,7 @@ describe('AppLayout', () => {
       });
 
       // If no other element was focused, should restore to menu button
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
     });
 
     it('handles focus restoration when element is no longer connected', async () => {

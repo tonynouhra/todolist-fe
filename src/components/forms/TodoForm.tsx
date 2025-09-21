@@ -247,7 +247,9 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                     }
                     onClick={handleGenerateAISuggestions}
                     disabled={
-                      generateSubtasksMutation.isPending || isLoading || !todo?.id
+                      generateSubtasksMutation.isPending ||
+                      isLoading ||
+                      !todo?.id
                     }
                     size="small"
                   >
@@ -259,7 +261,10 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                   </Button>
                   {generateSubtasksMutation.error && (
                     <Tooltip title="Failed to generate suggestions">
-                      <Alert severity="error" sx={{ p: 0.5, fontSize: '0.8rem' }}>
+                      <Alert
+                        severity="error"
+                        sx={{ p: 0.5, fontSize: '0.8rem' }}
+                      >
                         AI Error
                       </Alert>
                     </Tooltip>

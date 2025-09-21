@@ -7,6 +7,7 @@ import type {
   CreateTodoRequest,
   UpdateTodoRequest,
   TodoFilters,
+  PaginatedResponse,
 } from '../services';
 
 // Query hooks
@@ -233,14 +234,146 @@ export const useToggleTodoStatus = () => {
         queryKeys.todos.detail(id)
       );
 
+      // Capture list/subtask queries for optimistic updates
+      const listQueries = queryClient.getQueriesData<PaginatedResponse<Todo>>({
+        queryKey: queryKeys.todos.lists(),
+      });
+      const subtaskQueries = queryClient.getQueriesData<
+        PaginatedResponse<Todo>
+      >({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) && query.queryKey.includes('subtodos'),
+      });
+      const withSubtasksQueries = queryClient.getQueriesData<any>({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.includes('with-subtasks'),
+      });
+
+      let targetTodo: Todo | undefined = previousTodo;
+
+      if (!targetTodo) {
+        for (const [, data] of listQueries) {
+          if (!data) continue;
+          const match = data.data.find((todoItem) => todoItem.id === id);
+          if (match) {
+            targetTodo = match;
+            break;
+          }
+        }
+      }
+
+      if (!targetTodo) {
+        for (const [, data] of subtaskQueries) {
+          if (!data) continue;
+          const match = data.data.find((todoItem) => todoItem.id === id);
+          if (match) {
+            targetTodo = match;
+            break;
+          }
+        }
+      }
+
       // Optimistically update to the new value
-      if (previousTodo) {
-        const newStatus = previousTodo.status === 'done' ? 'todo' : 'done';
+      let newStatus: Todo['status'] | undefined;
+      if (targetTodo) {
+        newStatus = targetTodo.status === 'done' ? 'todo' : 'done';
+
+        const completedAt =
+          newStatus === 'done' ? new Date().toISOString() : null;
+
         queryClient.setQueryData(queryKeys.todos.detail(id), {
-          ...previousTodo,
+          ...targetTodo,
           status: newStatus,
-          completed_at: newStatus === 'done' ? new Date().toISOString() : null,
+          completed_at: completedAt,
         });
+
+        const previousLists: Array<{
+          key: readonly unknown[];
+          data: PaginatedResponse<Todo>;
+        }> = [];
+        listQueries.forEach(([key, data]) => {
+          if (!data) return;
+          const itemIndex = data.data.findIndex(
+            (todoItem) => todoItem.id === id
+          );
+          if (itemIndex === -1) return;
+          previousLists.push({ key, data });
+          const updatedList: PaginatedResponse<Todo> = {
+            ...data,
+            data: data.data.map((todoItem, index) => {
+              if (index !== itemIndex) {
+                return todoItem;
+              }
+              return {
+                ...todoItem,
+                status: newStatus!,
+                completed_at: completedAt,
+              };
+            }),
+          };
+          queryClient.setQueryData(key, updatedList);
+        });
+
+        const previousSubtasks: Array<{
+          key: readonly unknown[];
+          data: PaginatedResponse<Todo>;
+        }> = [];
+        subtaskQueries.forEach(([key, data]) => {
+          if (!data) return;
+          const itemIndex = data.data.findIndex(
+            (todoItem) => todoItem.id === id
+          );
+          if (itemIndex === -1) return;
+          previousSubtasks.push({ key, data });
+          const updatedSubtasks: PaginatedResponse<Todo> = {
+            ...data,
+            data: data.data.map((todoItem, index) => {
+              if (index !== itemIndex) {
+                return todoItem;
+              }
+              return {
+                ...todoItem,
+                status: newStatus!,
+                completed_at: completedAt,
+              };
+            }),
+          };
+          queryClient.setQueryData(key, updatedSubtasks);
+        });
+
+        const previousWithSubtasks: Array<{
+          key: readonly unknown[];
+          data: any;
+        }> = [];
+        withSubtasksQueries.forEach(([key, data]) => {
+          if (!data || !Array.isArray(data?.subtasks)) return;
+          const itemIndex = data.subtasks.findIndex(
+            (todoItem: Todo) => todoItem.id === id
+          );
+          if (itemIndex === -1) return;
+          previousWithSubtasks.push({ key, data });
+          const updatedParent = {
+            ...data,
+            subtasks: data.subtasks.map((todoItem: Todo, index: number) =>
+              index === itemIndex
+                ? {
+                    ...todoItem,
+                    status: newStatus!,
+                    completed_at: completedAt,
+                  }
+                : todoItem
+            ),
+          };
+          queryClient.setQueryData(key, updatedParent);
+        });
+
+        return {
+          previousTodo,
+          previousLists,
+          previousSubtasks,
+          previousWithSubtasks,
+        };
       }
 
       // Return a context object with the snapshotted value
@@ -254,6 +387,15 @@ export const useToggleTodoStatus = () => {
           context.previousTodo
         );
       }
+      context?.previousLists?.forEach(({ key, data }) => {
+        queryClient.setQueryData(key, data);
+      });
+      context?.previousSubtasks?.forEach(({ key, data }) => {
+        queryClient.setQueryData(key, data);
+      });
+      context?.previousWithSubtasks?.forEach(({ key, data }) => {
+        queryClient.setQueryData(key, data);
+      });
       const apiError = handleApiError(error);
       throw apiError;
     },
@@ -265,6 +407,21 @@ export const useToggleTodoStatus = () => {
       if (updatedTodo?.project_id) {
         queryClient.invalidateQueries({
           queryKey: queryKeys.projects.detail(updatedTodo.project_id),
+        });
+      }
+
+      if (updatedTodo?.parent_todo_id) {
+        queryClient.invalidateQueries({
+          queryKey: [
+            ...queryKeys.todos.detail(updatedTodo.parent_todo_id),
+            'subtodos',
+          ],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [
+            ...queryKeys.todos.detail(updatedTodo.parent_todo_id),
+            'with-subtasks',
+          ],
         });
       }
     },

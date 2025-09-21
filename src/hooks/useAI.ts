@@ -5,10 +5,9 @@ import { handleApiError } from '../utils/errorHandling';
 import type {
   AISubtaskRequest,
   FileAnalysisRequest,
-  GeneratedSubtask,
-  FileAnalysisResponse,
-  AIServiceStatus,
-} from '../services';
+  TodoSuggestionRequest,
+  TaskOptimizationRequest,
+} from '../types';
 
 // Query hooks
 export const useAIServiceStatus = () => {
@@ -30,11 +29,11 @@ export const useGenerateSubtasks = () => {
   return useMutation({
     mutationFn: (request: AISubtaskRequest) =>
       services.getAIService().generateSubtasks(request),
-    onSuccess: (subtasks, variables) => {
-      // Cache the generated subtasks
+    onSuccess: (response, variables) => {
+      // Cache the generated subtasks response
       queryClient.setQueryData(
         queryKeys.ai.subtasks(variables.todo_id),
-        subtasks
+        response
       );
 
       // Invalidate todos to potentially show new subtasks
@@ -72,11 +71,8 @@ export const useGenerateTodoSuggestions = () => {
   const services = useServices();
 
   return useMutation({
-    mutationFn: (context: {
-      project_id?: string;
-      existing_todos?: string[];
-      user_input?: string;
-    }) => services.getAIService().generateTodoSuggestions(context),
+    mutationFn: (request: TodoSuggestionRequest) =>
+      services.getAIService().generateTodoSuggestions(request),
     onError: (error) => {
       const apiError = handleApiError(error);
       throw apiError;
@@ -84,29 +80,33 @@ export const useGenerateTodoSuggestions = () => {
   });
 };
 
-export const useImproveDescription = () => {
+export const useOptimizeTask = () => {
   const services = useServices();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      todoId,
-      currentDescription,
-    }: {
-      todoId: string;
-      currentDescription: string;
-    }) =>
-      services.getAIService().improveDescription(todoId, currentDescription),
-    onSuccess: (improvedDescription, variables) => {
-      // Optionally update the todo in cache with improved description
-      const todoQueryKey = queryKeys.todos.detail(variables.todoId);
-      const existingTodo = queryClient.getQueryData(todoQueryKey);
+    mutationFn: (request: TaskOptimizationRequest) =>
+      services.getAIService().optimizeTask(request),
+    onSuccess: (optimizationResponse, variables) => {
+      // If a todo_id was provided, update the todo in cache with optimized content
+      if (variables.todo_id) {
+        const todoQueryKey = queryKeys.todos.detail(variables.todo_id);
+        const existingTodo = queryClient.getQueryData(todoQueryKey);
 
-      if (existingTodo) {
-        queryClient.setQueryData(todoQueryKey, {
-          ...existingTodo,
-          description: improvedDescription,
-        });
+        if (existingTodo) {
+          const updates: Partial<any> = {};
+          if (optimizationResponse.optimized_title) {
+            updates.title = optimizationResponse.optimized_title;
+          }
+          if (optimizationResponse.optimized_description) {
+            updates.description = optimizationResponse.optimized_description;
+          }
+
+          queryClient.setQueryData(todoQueryKey, {
+            ...existingTodo,
+            ...updates,
+          });
+        }
       }
     },
     onError: (error) => {
@@ -121,11 +121,12 @@ export const useAIAvailability = () => {
   const { data: status, isLoading, error } = useAIServiceStatus();
 
   return {
-    isAvailable: status?.available ?? false,
+    isAvailable: status?.service_available ?? false,
     isLoading,
     error,
-    serviceName: status?.service_name,
-    lastCheck: status?.last_check,
-    errorMessage: status?.error_message,
+    modelName: status?.model_name,
+    lastRequestTimestamp: status?.last_request_timestamp,
+    requestsToday: status?.requests_today,
+    quotaRemaining: status?.quota_remaining,
   };
 };

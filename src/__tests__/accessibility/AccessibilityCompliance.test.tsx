@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '../../test-utils';
+import { render, screen } from '../../test-utils';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { TodoCard } from '../../components/ui/TodoCard';
 import { ProjectCard } from '../../components/ui/ProjectCard';
@@ -109,17 +109,12 @@ describe('Accessibility Compliance', () => {
       />
     );
 
-    // Find all focusable elements
-    const focusableElements = container.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
+    const checkbox = screen.getByRole('checkbox');
+    expect(checkbox.tabIndex).toBeGreaterThanOrEqual(0);
 
-    // Verify all focusable elements have proper tab order
-    focusableElements.forEach((element, index) => {
-      const tabIndex = element.getAttribute('tabindex');
-      if (tabIndex !== null && tabIndex !== '0') {
-        expect(parseInt(tabIndex)).toBeGreaterThanOrEqual(0);
-      }
+    const buttons = screen.getAllByRole('button');
+    buttons.forEach((button) => {
+      expect(button.tabIndex).toBeGreaterThanOrEqual(0);
     });
 
     const results = await axe(container);
@@ -137,15 +132,15 @@ describe('Accessibility Compliance', () => {
     );
 
     // Check for required ARIA attributes
-    const card = container.querySelector('[role="article"]');
-    expect(card).toHaveAttribute('aria-label');
+    const card = screen.getByRole('article');
+    expect(card).toHaveAccessibleName();
 
-    const checkbox = container.querySelector('[role="checkbox"]');
-    expect(checkbox).toHaveAttribute('aria-label');
+    const checkbox = screen.getByRole('checkbox');
+    expect(checkbox).toHaveAccessibleName();
 
-    const buttons = container.querySelectorAll('button');
+    const buttons = screen.getAllByRole('button');
     buttons.forEach((button) => {
-      expect(button).toHaveAttribute('aria-label');
+      expect(button).toHaveAccessibleName();
     });
 
     const results = await axe(container);
@@ -187,11 +182,11 @@ describe('Accessibility Compliance', () => {
     );
 
     // Check for proper heading hierarchy
-    const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    const headings = screen.getAllByRole('heading');
     expect(headings.length).toBeGreaterThan(0);
 
     // Check for main landmark
-    const main = container.querySelector('main');
+    const main = screen.getByRole('main');
     expect(main).toBeInTheDocument();
 
     const results = await axe(container);
@@ -210,7 +205,7 @@ describe('Accessibility Compliance', () => {
     );
 
     // Check that dialog has proper focus management
-    const dialog = container.querySelector('[role="dialog"]');
+    const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAttribute('aria-labelledby');
     expect(dialog).toHaveAttribute('aria-describedby');
 

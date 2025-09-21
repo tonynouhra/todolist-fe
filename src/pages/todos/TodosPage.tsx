@@ -6,14 +6,28 @@ import {
   Fab,
   Alert,
   Snackbar,
+  Button,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  AutoAwesome as AIIcon,
+  Lightbulb as SuggestIcon,
+} from '@mui/icons-material';
 import { AppLayout } from '../../components/layout';
-import { TodoList, TodoFilters, TodoDetailView, SubtaskCreationDialog } from '../../components/ui';
+import {
+  TodoList,
+  TodoFilters,
+  TodoDetailView,
+  SubtaskCreationDialog,
+} from '../../components/ui';
 import { TodoForm } from '../../components/forms';
 import { ConfirmDialog } from '../../components/common';
+import {
+  TodoSuggestionDialog,
+  TaskOptimizationDialog,
+} from '../../components/ai';
 import {
   useTodos,
   useCreateTodo,
@@ -42,7 +56,8 @@ export const TodosPage: React.FC = () => {
   const [parentTodoForSubtask, setParentTodoForSubtask] = useState<Todo | null>(
     null
   );
-  const [showSubtaskCreationDialog, setShowSubtaskCreationDialog] = useState(false);
+  const [showSubtaskCreationDialog, setShowSubtaskCreationDialog] =
+    useState(false);
   const [detailViewTodo, setDetailViewTodo] = useState<Todo | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
@@ -53,6 +68,13 @@ export const TodosPage: React.FC = () => {
     todoId: '',
     todoTitle: '',
   });
+
+  // AI dialog states
+  const [showTodoSuggestionDialog, setShowTodoSuggestionDialog] =
+    useState(false);
+  const [showTaskOptimizationDialog, setShowTaskOptimizationDialog] =
+    useState(false);
+  const [optimizationTodo, setOptimizationTodo] = useState<Todo | null>(null);
 
   // State for notifications
   const [notification, setNotification] = useState<{
@@ -82,7 +104,7 @@ export const TodosPage: React.FC = () => {
 
   // Computed values
   const todos = todosData?.data || [];
-  const projects = projectsData?.data || [];
+  const projects = Array.isArray(projectsData?.data) ? projectsData.data : [];
   const totalPages = todosData
     ? Math.ceil(todosData.total / (filters.limit || 10))
     : 1;
@@ -237,6 +259,25 @@ export const TodosPage: React.FC = () => {
     setNotification((prev) => ({ ...prev, open: false }));
   };
 
+  // AI handlers
+  const handleOpenTodoSuggestions = () => {
+    setShowTodoSuggestionDialog(true);
+  };
+
+  const handleCloseTodoSuggestions = () => {
+    setShowTodoSuggestionDialog(false);
+  };
+
+  const handleOpenTaskOptimization = (todo?: Todo) => {
+    setOptimizationTodo(todo || null);
+    setShowTaskOptimizationDialog(true);
+  };
+
+  const handleCloseTaskOptimization = () => {
+    setShowTaskOptimizationDialog(false);
+    setOptimizationTodo(null);
+  };
+
   // Loading states
   const isFormLoading =
     createTodoMutation.isPending || updateTodoMutation.isPending;
@@ -252,10 +293,31 @@ export const TodosPage: React.FC = () => {
             display="flex"
             justifyContent="space-between"
             alignItems="center"
+            flexWrap="wrap"
+            gap={2}
           >
             <Typography variant="h4" component="h1">
               Todos
             </Typography>
+
+            <Box display="flex" gap={1} flexWrap="wrap">
+              <Button
+                variant="outlined"
+                startIcon={<SuggestIcon />}
+                onClick={handleOpenTodoSuggestions}
+                size={isMobile ? 'small' : 'medium'}
+              >
+                AI Suggestions
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<AIIcon />}
+                onClick={() => handleOpenTaskOptimization()}
+                size={isMobile ? 'small' : 'medium'}
+              >
+                Optimize Task
+              </Button>
+            </Box>
           </Box>
 
           {/* Filters */}
@@ -341,6 +403,21 @@ export const TodosPage: React.FC = () => {
             cancelText="Cancel"
             isLoading={isDeleteLoading}
             severity="error"
+          />
+
+          {/* AI Todo Suggestion Dialog */}
+          <TodoSuggestionDialog
+            open={showTodoSuggestionDialog}
+            onClose={handleCloseTodoSuggestions}
+            projectId={filters.project_id}
+            existingTodos={todos.map((todo) => todo.title)}
+          />
+
+          {/* AI Task Optimization Dialog */}
+          <TaskOptimizationDialog
+            open={showTaskOptimizationDialog}
+            onClose={handleCloseTaskOptimization}
+            todo={optimizationTodo || undefined}
           />
 
           {/* Notification Snackbar */}

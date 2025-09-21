@@ -76,6 +76,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       variant="rectangular"
       width={width}
       height={height}
+      data-testid="lazy-image-placeholder"
       sx={{
         bgcolor: 'grey.200',
         borderRadius: 1,

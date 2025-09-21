@@ -47,7 +47,7 @@ export const ProjectsPage: React.FC = () => {
     error: projectsError,
   } = useProjects({ search: searchTerm });
 
-  const projects = projectsData?.data || [];
+  const projects = Array.isArray(projectsData?.data) ? projectsData.data : [];
 
   // Get todos for the selected project (we'll implement this later if needed)
   // const { data: todosData, isLoading: todosLoading } = useTodos(

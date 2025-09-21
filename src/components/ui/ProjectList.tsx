@@ -20,6 +20,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   onDelete,
   onClick,
 }) => {
+  const projectItems = Array.isArray(projects) ? projects : [];
+
   if (loading) {
     return (
       <Box
@@ -51,7 +53,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     );
   }
 
-  if (projects.length === 0) {
+  if (projectItems.length === 0) {
+    if (!Array.isArray(projects)) {
+      console.warn(
+        'ProjectList expected an array of projects but received',
+        projects
+      );
+    }
     return (
       <Box
         display="flex"
@@ -81,7 +89,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       }}
       gap={3}
     >
-      {projects.map((project) => (
+      {projectItems.map((project) => (
         <ProjectCardWithStats
           key={project.id}
           project={project}

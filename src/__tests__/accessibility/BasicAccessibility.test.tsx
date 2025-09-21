@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '../../test-utils';
+import { render, screen, within } from '../../test-utils';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { TodosPage } from '../../pages/todos/TodosPage';
 import { ProjectsPage } from '../../pages/projects/ProjectsPage';
@@ -103,12 +103,10 @@ describe('Basic Accessibility Tests', () => {
 
     // Check for proper list structure if todos are displayed
     const lists = screen.queryAllByRole('list');
-    if (lists.length > 0) {
-      lists.forEach((list) => {
-        const listItems = screen.getAllByRole('listitem');
-        expect(listItems.length).toBeGreaterThan(0);
-      });
-    }
+    lists.forEach((list) => {
+      const listItems = within(list).queryAllByRole('listitem');
+      expect(listItems.length).toBeGreaterThan(0);
+    });
   });
 
   it('should handle focus management properly', () => {

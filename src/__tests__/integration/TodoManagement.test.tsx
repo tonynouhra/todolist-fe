@@ -164,10 +164,8 @@ describe('Todo Management Integration', () => {
     render(<TodosPage />);
 
     // Wait for todos to load
-    await waitFor(() => {
-      expect(screen.getByText('Todo 1')).toBeInTheDocument();
-      expect(screen.getByText('Todo 2')).toBeInTheDocument();
-    });
+    await screen.findByText('Todo 1');
+    await screen.findByText('Todo 2');
 
     // Filter by completed status
     const statusFilter = screen.getByLabelText(/status/i);
@@ -179,8 +177,8 @@ describe('Todo Management Integration', () => {
     // Verify only completed todos are shown
     await waitFor(() => {
       expect(screen.queryByText('Todo 1')).not.toBeInTheDocument();
-      expect(screen.getByText('Todo 2')).toBeInTheDocument();
     });
+    expect(screen.getByText('Todo 2')).toBeInTheDocument();
   });
 
   it('searches todos by title', async () => {
@@ -222,18 +220,16 @@ describe('Todo Management Integration', () => {
     render(<TodosPage />);
 
     // Wait for todos to load
-    await waitFor(() => {
-      expect(screen.getByText('Important Task')).toBeInTheDocument();
-      expect(screen.getByText('Regular Todo')).toBeInTheDocument();
-    });
+    await screen.findByText('Important Task');
+    await screen.findByText('Regular Todo');
 
     // Search for specific todo
     const searchInput = screen.getByRole('textbox', { name: /search/i });
     fireEvent.change(searchInput, { target: { value: 'Important' } });
 
     // Verify search results
+    await screen.findByText('Important Task');
     await waitFor(() => {
-      expect(screen.getByText('Important Task')).toBeInTheDocument();
       expect(screen.queryByText('Regular Todo')).not.toBeInTheDocument();
     });
   });

@@ -1,36 +1,26 @@
 import { AxiosInstance } from 'axios';
-import { AISubtaskRequest, GeneratedSubtask, ApiResponse } from '../types';
-
-export interface FileAnalysisRequest {
-  file_content: string;
-  file_name: string;
-  analysis_type?: 'todo_extraction' | 'summary' | 'suggestions';
-}
-
-export interface FileAnalysisResponse {
-  analysis: string;
-  suggested_todos?: GeneratedSubtask[];
-  summary?: string;
-  recommendations?: string[];
-}
-
-export interface AIServiceStatus {
-  available: boolean;
-  service_name: string;
-  last_check: string;
-  error_message?: string;
-}
+import {
+  AISubtaskRequest,
+  ApiResponse,
+  TodoSuggestionRequest,
+  TodoSuggestionResponse,
+  TaskOptimizationRequest,
+  TaskOptimizationResponse,
+  FileAnalysisRequest,
+  FileAnalysisResponse,
+  SubtaskGenerationResponse,
+  AIServiceStatus,
+} from '../types';
 
 export class AIService {
   constructor(private readonly apiClient: AxiosInstance) {}
 
   async generateSubtasks(
     request: AISubtaskRequest
-  ): Promise<GeneratedSubtask[]> {
-    const response = await this.apiClient.post<ApiResponse<GeneratedSubtask[]>>(
-      '/api/ai/generate-subtasks',
-      request
-    );
+  ): Promise<SubtaskGenerationResponse> {
+    const response = await this.apiClient.post<
+      ApiResponse<SubtaskGenerationResponse>
+    >('/api/ai/generate-subtasks', request);
     return response.data.data;
   }
 
@@ -49,30 +39,21 @@ export class AIService {
     return response.data.data;
   }
 
-  // Note: These endpoints may not exist in the backend yet
-  // They are kept for future implementation
-  async generateTodoSuggestions(context: {
-    project_id?: string;
-    existing_todos?: string[];
-    user_input?: string;
-  }): Promise<GeneratedSubtask[]> {
-    const response = await this.apiClient.post<ApiResponse<GeneratedSubtask[]>>(
-      '/api/ai/suggest-todos',
-      context
-    );
+  async generateTodoSuggestions(
+    request: TodoSuggestionRequest
+  ): Promise<TodoSuggestionResponse> {
+    const response = await this.apiClient.post<
+      ApiResponse<TodoSuggestionResponse>
+    >('/api/ai/suggest-todos', request);
     return response.data.data;
   }
 
-  async improveDescription(
-    todoId: string,
-    currentDescription: string
-  ): Promise<string> {
+  async optimizeTask(
+    request: TaskOptimizationRequest
+  ): Promise<TaskOptimizationResponse> {
     const response = await this.apiClient.post<
-      ApiResponse<{ improved_description: string }>
-    >('/api/ai/improve-description', {
-      todo_id: todoId,
-      current_description: currentDescription,
-    });
-    return response.data.data.improved_description;
+      ApiResponse<TaskOptimizationResponse>
+    >('/api/ai/optimize-task', request);
+    return response.data.data;
   }
 }

@@ -320,7 +320,7 @@ describe('Header', () => {
 
       // Focus the button to trigger focus-visible styles
       menuButton.focus();
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
     });
 
     it('provides proper disabled state feedback', () => {

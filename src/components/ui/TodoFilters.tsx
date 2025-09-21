@@ -49,6 +49,8 @@ export const TodoFilters: React.FC<TodoFiltersProps> = ({
   projects = [],
   showProjectFilter = true,
 }) => {
+  const projectOptions = Array.isArray(projects) ? projects : [];
+
   const handleFilterChange = (key: keyof TodoFiltersType, value: any) => {
     onFiltersChange({
       ...filters,
@@ -137,7 +139,7 @@ export const TodoFilters: React.FC<TodoFiltersProps> = ({
             </Select>
           </FormControl>
 
-          {showProjectFilter && projects.length > 0 && (
+          {showProjectFilter && projectOptions.length > 0 && (
             <FormControl size="small" sx={{ minWidth: 160 }}>
               <InputLabel>Project</InputLabel>
               <Select
@@ -148,7 +150,7 @@ export const TodoFilters: React.FC<TodoFiltersProps> = ({
                 label="Project"
               >
                 <MenuItem value="">All Projects</MenuItem>
-                {projects.map((project) => (
+                {projectOptions.map((project) => (
                   <MenuItem key={project.id} value={project.id}>
                     {project.name}
                   </MenuItem>

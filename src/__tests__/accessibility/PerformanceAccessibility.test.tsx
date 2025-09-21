@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '../../test-utils';
+import { render, screen, waitFor, fireEvent } from '../../test-utils';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { LazyImage } from '../../components/common/LazyImage';
 import { AccessibleButton } from '../../components/common/AccessibleButton';
@@ -59,7 +59,7 @@ describe('Performance and Accessibility Components', () => {
       );
 
       // Should show loading skeleton initially
-      expect(container.querySelector('.MuiSkeleton-root')).toBeInTheDocument();
+      expect(screen.getByTestId('lazy-image-placeholder')).toBeInTheDocument();
 
       const results = await axe(container);
       expect(results).toHaveNoViolations();
@@ -77,10 +77,8 @@ describe('Performance and Accessibility Components', () => {
       );
 
       // Simulate image error
-      const img = container.querySelector('img');
-      if (img) {
-        img.dispatchEvent(new Event('error'));
-      }
+      const img = screen.getByRole('img', { name: 'Test image' });
+      fireEvent.error(img);
 
       await waitFor(() => {
         expect(
@@ -229,13 +227,13 @@ describe('Performance and Accessibility Components', () => {
 
       render(
         <div role="listbox" aria-label="Test list">
-          <div role="option" tabIndex={0}>
+          <div role="option" tabIndex={0} aria-selected="true">
             Option 1
           </div>
-          <div role="option" tabIndex={-1}>
+          <div role="option" tabIndex={-1} aria-selected="false">
             Option 2
           </div>
-          <div role="option" tabIndex={-1}>
+          <div role="option" tabIndex={-1} aria-selected="false">
             Option 3
           </div>
         </div>

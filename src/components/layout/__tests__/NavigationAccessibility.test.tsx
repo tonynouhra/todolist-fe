@@ -147,10 +147,10 @@ describe('Navigation Accessibility Tests', () => {
 
       // Tab navigation
       dashboardItem.focus();
-      expect(document.activeElement).toBe(dashboardItem);
+      expect(dashboardItem).toHaveFocus();
 
       await user.tab();
-      expect(document.activeElement).toBe(todosItem);
+      expect(todosItem).toHaveFocus();
     });
 
     it('responds to Enter and Space keys', async () => {
@@ -177,7 +177,7 @@ describe('Navigation Accessibility Tests', () => {
       menuItems.forEach((item) => {
         item.focus();
         // Focus should be visible (tested via CSS in actual implementation)
-        expect(document.activeElement).toBe(item);
+        expect(item).toHaveFocus();
       });
     });
   });
@@ -366,10 +366,10 @@ describe('Navigation Accessibility Tests', () => {
       const todosItem = screen.getByRole('menuitem', { name: 'Todos' });
 
       dashboardItem.focus();
-      expect(document.activeElement).toBe(dashboardItem);
+      expect(dashboardItem).toHaveFocus();
 
       await user.tab();
-      expect(document.activeElement).toBe(todosItem);
+      expect(todosItem).toHaveFocus();
     });
 
     it('navigates on Enter and Space keys', async () => {
@@ -422,12 +422,12 @@ describe('Navigation Accessibility Tests', () => {
       });
 
       menuButton.focus();
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
 
       await user.click(menuButton);
 
       // Focus should be managed properly during transition
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
     });
 
     it('provides skip links for keyboard users', () => {

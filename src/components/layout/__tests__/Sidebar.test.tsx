@@ -436,10 +436,10 @@ describe('Sidebar', () => {
 
       // Tab through items
       dashboardItem.focus();
-      expect(document.activeElement).toBe(dashboardItem);
+      expect(dashboardItem).toHaveFocus();
 
       await user.tab();
-      expect(document.activeElement).toBe(todosItem);
+      expect(todosItem).toHaveFocus();
     });
 
     it('has proper focus-visible styles', () => {

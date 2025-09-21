@@ -391,12 +391,12 @@ describe('Navigation Visual Regression Tests', () => {
 
       // Focus should be visible
       dashboardButton.focus();
-      expect(document.activeElement).toBe(dashboardButton);
+      expect(dashboardButton).toHaveFocus();
 
       // Tab to next item
       await user.tab();
       const todosButton = screen.getByLabelText('Navigate to Todos');
-      expect(document.activeElement).toBe(todosButton);
+      expect(todosButton).toHaveFocus();
     });
 
     it('shows proper focus indicators on menu button', () => {
@@ -417,7 +417,7 @@ describe('Navigation Visual Regression Tests', () => {
       });
 
       menuButton.focus();
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
     });
 
     it('shows proper focus indicators on sidebar items', () => {
@@ -437,7 +437,7 @@ describe('Navigation Visual Regression Tests', () => {
       const dashboardItem = screen.getByRole('menuitem', { name: 'Dashboard' });
 
       dashboardItem.focus();
-      expect(document.activeElement).toBe(dashboardItem);
+      expect(dashboardItem).toHaveFocus();
     });
   });
 

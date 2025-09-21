@@ -174,7 +174,7 @@ describe('Accessibility Improvements', () => {
 
       // Test that the FAB can receive focus
       fab.focus();
-      expect(document.activeElement).toBe(fab);
+      expect(fab).toHaveFocus();
     });
   });
 
@@ -188,14 +188,11 @@ describe('Accessibility Improvements', () => {
         </TestWrapper>
       );
 
-      const description = document.getElementById('fab-description');
-      expect(description).toBeInTheDocument();
-      expect(description).toHaveTextContent(
-        'Click to open the add todo dialog'
-      );
+      const description = screen.getByText('Click to open the add todo dialog');
+      expect(description).toHaveAttribute('id', 'fab-description');
 
       // Should be visually hidden but accessible to screen readers
-      const styles = window.getComputedStyle(description!);
+      const styles = window.getComputedStyle(description);
       expect(styles.position).toBe('absolute');
       expect(styles.left).toBe('-10000px');
     });

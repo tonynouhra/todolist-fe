@@ -28,6 +28,7 @@ const mockAnnounceToScreenReader = jest.fn(
 
 // Mock focus management
 const mockFocusManagement = {
+  // eslint-disable-next-line testing-library/no-node-access
   storeFocus: jest.fn(() => document.activeElement),
   restoreFocus: jest.fn((element) => {
     if (element && typeof element.focus === 'function') {
@@ -48,9 +49,11 @@ const mockFocusManagement = {
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
 
+      // eslint-disable-next-line testing-library/no-node-access
       if (event.shiftKey && document.activeElement === firstElement) {
         event.preventDefault();
         lastElement?.focus();
+        // eslint-disable-next-line testing-library/no-node-access
       } else if (!event.shiftKey && document.activeElement === lastElement) {
         event.preventDefault();
         firstElement?.focus();
@@ -108,7 +111,7 @@ jest.mock('../Sidebar', () => ({
         aria-hidden={!open}
       >
         <nav>
-          <ul role="list">
+          <ul>
             <li>
               <button
                 data-testid="nav-dashboard"
@@ -160,7 +163,7 @@ jest.mock('../MobileNavigation', () => ({
       aria-label="Mobile navigation"
       style={{ position: 'fixed', bottom: 0 }}
     >
-      <ul role="list" style={{ display: 'flex' }}>
+      <ul style={{ display: 'flex' }}>
         <li>
           <button data-testid="mobile-nav-dashboard" aria-current={false}>
             <span aria-hidden="true">🏠</span>
@@ -431,7 +434,7 @@ describe('Comprehensive Accessibility Tests', () => {
 
       // Tab to menu button
       await user.tab();
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
 
       // Activate with Enter
       await user.keyboard('{Enter}');
@@ -445,18 +448,18 @@ describe('Comprehensive Accessibility Tests', () => {
       // Tab to footer navigation
       await user.tab();
       const firstFooterButton = screen.getByTestId('footer-nav-dashboard');
-      expect(document.activeElement).toBe(firstFooterButton);
+      expect(firstFooterButton).toHaveFocus();
 
       // Navigate within footer with arrow keys
       await user.keyboard('{ArrowRight}');
       const secondFooterButton = screen.getByTestId('footer-nav-todos');
-      expect(document.activeElement).toBe(secondFooterButton);
+      expect(secondFooterButton).toHaveFocus();
 
       // Tab to FAB
       await user.tab();
       await user.tab(); // Skip third footer button
       const fabButton = screen.getByTestId('fab-button');
-      expect(document.activeElement).toBe(fabButton);
+      expect(fabButton).toHaveFocus();
     });
 
     it('handles keyboard navigation in sidebar', async () => {
@@ -509,10 +512,10 @@ describe('Comprehensive Accessibility Tests', () => {
       // Tab through mobile navigation
       await user.tab();
       await user.tab(); // Skip menu button
-      expect(document.activeElement).toBe(mobileNavDashboard);
+      expect(mobileNavDashboard).toHaveFocus();
 
       await user.tab();
-      expect(document.activeElement).toBe(mobileNavTodos);
+      expect(mobileNavTodos).toHaveFocus();
     });
 
     it('traps focus within modal sidebar on mobile', async () => {
@@ -587,11 +590,10 @@ describe('Comprehensive Accessibility Tests', () => {
       expect(fabButton).toHaveAttribute('aria-describedby', 'fab-description');
 
       // FAB description
-      const fabDescription = document.getElementById('fab-description');
-      expect(fabDescription).toBeInTheDocument();
-      expect(fabDescription).toHaveTextContent(
+      const fabDescription = screen.getByText(
         'Click to open the add todo dialog'
       );
+      expect(fabDescription).toHaveAttribute('id', 'fab-description');
     });
 
     it('updates ARIA states during interactions', async () => {
@@ -624,13 +626,10 @@ describe('Comprehensive Accessibility Tests', () => {
       });
 
       // Footer navigation description
-      const footerDescription = document.getElementById(
-        'footer-nav-description'
-      );
-      expect(footerDescription).toBeInTheDocument();
-      expect(footerDescription).toHaveTextContent(
+      const footerDescription = screen.getByText(
         'Use arrow keys to navigate between options, Enter or Space to select'
       );
+      expect(footerDescription).toHaveAttribute('id', 'footer-nav-description');
 
       // Should be visually hidden but accessible to screen readers
       const computedStyle = window.getComputedStyle(footerDescription);
@@ -648,7 +647,7 @@ describe('Comprehensive Accessibility Tests', () => {
 
       // Focus menu button
       menuButton.focus();
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
 
       // Toggle sidebar
       await user.click(menuButton);
@@ -714,15 +713,15 @@ describe('Comprehensive Accessibility Tests', () => {
 
       // Tab through elements in logical order
       await user.tab(); // Should go to menu button
-      expect(document.activeElement).toBe(menuButton);
+      expect(menuButton).toHaveFocus();
 
       await user.tab(); // Should go to first footer button
       const firstFooterButton = screen.getByTestId('footer-nav-dashboard');
-      expect(document.activeElement).toBe(firstFooterButton);
+      expect(firstFooterButton).toHaveFocus();
 
       await user.tab(); // Should go to second footer button
       const secondFooterButton = screen.getByTestId('footer-nav-todos');
-      expect(document.activeElement).toBe(secondFooterButton);
+      expect(secondFooterButton).toHaveFocus();
     });
   });
 
@@ -889,12 +888,15 @@ describe('Comprehensive Accessibility Tests', () => {
 
     it('handles missing ARIA references gracefully', () => {
       // Mock a scenario where ARIA references might be missing
+      // eslint-disable-next-line testing-library/no-node-access
       const originalGetElementById = document.getElementById;
+      // eslint-disable-next-line testing-library/no-node-access
       document.getElementById = jest.fn(() => null);
 
       expect(() => renderComponent()).not.toThrow();
 
       // Restore original function
+      // eslint-disable-next-line testing-library/no-node-access
       document.getElementById = originalGetElementById;
     });
 
