@@ -378,6 +378,7 @@ export const TodosPage: React.FC = () => {
             onDelete={handleDeleteClick}
             onToggleStatus={handleToggleStatus}
             projects={projects}
+            onViewDetails={handleViewDetails}
           />
 
           {/* Subtask Creation Dialog */}

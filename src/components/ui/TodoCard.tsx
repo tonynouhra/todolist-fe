@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -13,6 +13,8 @@ import {
   ListItemText,
   Tooltip,
   Button,
+  Popover,
+  TextField,
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
@@ -27,7 +29,7 @@ import {
 } from '@mui/icons-material';
 import { Todo } from '../../types';
 import { format, isAfter, parseISO } from 'date-fns';
-import { useSubtaskCount } from '../../hooks/useTodos';
+import { useSubtaskCount, useUpdateTodo } from '../../hooks/useTodos';
 
 interface TodoCardProps {
   todo: Todo;
@@ -40,11 +42,11 @@ interface TodoCardProps {
 }
 
 const priorityColors = {
-  1: '#4caf50', // Green - Low
-  2: '#8bc34a', // Light Green - Low-Medium
-  3: '#ff9800', // Orange - Medium
-  4: '#f44336', // Red - High
-  5: '#d32f2f', // Dark Red - Critical
+  1: '#4caf50',
+  2: '#8bc34a',
+  3: '#ff9800',
+  4: '#f44336',
+  5: '#d32f2f',
 };
 
 const priorityLabels = {
@@ -76,41 +78,129 @@ export const TodoCard: React.FC<TodoCardProps> = ({
   onCreateSubtask,
   isLoading = false,
 }) => {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [statusAnchor, setStatusAnchor] = useState<HTMLElement | null>(null);
+  const [priorityAnchor, setPriorityAnchor] = useState<HTMLElement | null>(
+    null
+  );
+  const [dueDateAnchor, setDueDateAnchor] = useState<HTMLElement | null>(null);
+  const [dueDateInput, setDueDateInput] = useState('');
+  const [localTodo, setLocalTodo] = useState(todo);
+
+  const updateTodoMutation = useUpdateTodo();
+  const isUpdating = updateTodoMutation.isPending;
   const subtaskCount = useSubtaskCount(todo.id);
 
+  useEffect(() => {
+    setLocalTodo(todo);
+  }, [todo]);
+
+  useEffect(() => {
+    if (localTodo.due_date) {
+      setDueDateInput(localTodo.due_date.split('T')[0]);
+    } else {
+      setDueDateInput('');
+    }
+  }, [localTodo.due_date]);
+
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+    setMenuAnchor(event.currentTarget);
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
+  const closeMenu = () => {
+    setMenuAnchor(null);
   };
 
   const handleEdit = () => {
     onEdit(todo);
-    handleMenuClose();
+    closeMenu();
   };
 
   const handleDelete = () => {
     onDelete(todo.id);
-    handleMenuClose();
+    closeMenu();
   };
 
   const handleViewDetails = () => {
     onViewDetails?.(todo);
-    handleMenuClose();
+    closeMenu();
   };
 
   const handleCreateSubtask = () => {
     onCreateSubtask?.(todo);
-    handleMenuClose();
+    closeMenu();
+  };
+
+  const handleStatusChipClick = (event: React.MouseEvent<HTMLElement>) => {
+    setStatusAnchor(event.currentTarget);
+  };
+
+  const handlePriorityChipClick = (event: React.MouseEvent<HTMLElement>) => {
+    setPriorityAnchor(event.currentTarget);
+  };
+
+  const handleDueDateChipClick = (event: React.MouseEvent<HTMLElement>) => {
+    setDueDateAnchor(event.currentTarget);
+  };
+
+  const updateTodoField = async (
+    displayPayload: Partial<Todo>,
+    apiOverrides?: Record<string, unknown>
+  ) => {
+    setLocalTodo((prev) => ({ ...prev, ...displayPayload }));
+    const payloadToSend = apiOverrides
+      ? { ...displayPayload, ...apiOverrides }
+      : displayPayload;
+    try {
+      await updateTodoMutation.mutateAsync({
+        id: todo.id,
+        ...payloadToSend,
+      });
+    } catch (error) {
+      console.error('Failed to update todo', error);
+      setLocalTodo(todo);
+    }
+  };
+
+  const handleStatusSelect = async (newStatus: Todo['status']) => {
+    if (newStatus === localTodo.status) {
+      setStatusAnchor(null);
+      return;
+    }
+    setStatusAnchor(null);
+    const completed_at =
+      newStatus === 'done' ? new Date().toISOString() : undefined;
+    await updateTodoField({ status: newStatus, completed_at });
+  };
+
+  const handlePrioritySelect = async (newPriority: Todo['priority']) => {
+    if (newPriority === localTodo.priority) {
+      setPriorityAnchor(null);
+      return;
+    }
+    setPriorityAnchor(null);
+    await updateTodoField({ priority: newPriority });
+  };
+
+  const handleDueDateSave = async () => {
+    if (!dueDateInput) {
+      setDueDateAnchor(null);
+      return;
+    }
+    const nextDueDate = `${dueDateInput}T00:00:00Z`;
+    setDueDateAnchor(null);
+    await updateTodoField({ due_date: nextDueDate });
+  };
+
+  const handleDueDateClear = async () => {
+    setDueDateAnchor(null);
+    setDueDateInput('');
+    await updateTodoField({ due_date: undefined }, { due_date: null });
   };
 
   const isOverdue =
-    todo.due_date && isAfter(new Date(), parseISO(todo.due_date));
-  const isDone = todo.status === 'done';
+    localTodo.due_date && isAfter(new Date(), parseISO(localTodo.due_date));
+  const isDone = localTodo.status === 'done';
 
   return (
     <Card
@@ -177,34 +267,46 @@ export const TodoCard: React.FC<TodoCardProps> = ({
             <Box display="flex" flexWrap="wrap" gap={1} alignItems="center">
               <Chip
                 size="small"
-                label={statusLabels[todo.status]}
+                label={statusLabels[localTodo.status]}
                 sx={{
-                  backgroundColor: statusColors[todo.status],
+                  backgroundColor: statusColors[localTodo.status],
                   color: 'white',
                   fontWeight: 'bold',
                 }}
+                clickable
+                onClick={handleStatusChipClick}
               />
 
               <Chip
                 size="small"
                 icon={<FlagIcon />}
-                label={priorityLabels[todo.priority]}
+                label={priorityLabels[localTodo.priority]}
                 sx={{
-                  backgroundColor: priorityColors[todo.priority],
+                  backgroundColor: priorityColors[localTodo.priority],
                   color: 'white',
                   fontWeight: 'bold',
                 }}
+                clickable
+                onClick={handlePriorityChipClick}
               />
 
-              {todo.due_date && (
-                <Chip
-                  size="small"
-                  icon={<ScheduleIcon />}
-                  label={format(parseISO(todo.due_date), 'MMM dd, yyyy')}
-                  color={isOverdue && !isDone ? 'error' : 'default'}
-                  variant={isOverdue && !isDone ? 'filled' : 'outlined'}
-                />
-              )}
+              <Chip
+                size="small"
+                icon={<ScheduleIcon />}
+                label={
+                  localTodo.due_date
+                    ? format(parseISO(localTodo.due_date), 'MMM dd, yyyy')
+                    : 'Set Due Date'
+                }
+                color={
+                  localTodo.due_date && isOverdue && !isDone
+                    ? 'error'
+                    : 'default'
+                }
+                variant={isOverdue && !isDone ? 'filled' : 'outlined'}
+                clickable
+                onClick={handleDueDateChipClick}
+              />
 
               {subtaskCount > 0 && (
                 <Chip
@@ -213,11 +315,12 @@ export const TodoCard: React.FC<TodoCardProps> = ({
                   label={`${subtaskCount} subtasks`}
                   variant="outlined"
                   color="primary"
+                  clickable={Boolean(onViewDetails)}
+                  onClick={() => onViewDetails?.(todo)}
                 />
               )}
             </Box>
 
-            {/* Action buttons for subtasks */}
             {(onViewDetails || onCreateSubtask) && (
               <Box display="flex" gap={1} mt={2}>
                 {onViewDetails && subtaskCount > 0 && (
@@ -257,17 +360,11 @@ export const TodoCard: React.FC<TodoCardProps> = ({
       </CardContent>
 
       <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={closeMenu}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <MenuItem onClick={handleEdit}>
           <ListItemIcon>
@@ -301,6 +398,79 @@ export const TodoCard: React.FC<TodoCardProps> = ({
           <ListItemText>Delete</ListItemText>
         </MenuItem>
       </Menu>
+
+      <Menu
+        anchorEl={statusAnchor}
+        open={Boolean(statusAnchor)}
+        onClose={() => setStatusAnchor(null)}
+      >
+        {Object.entries(statusLabels).map(([value, label]) => (
+          <MenuItem
+            key={value}
+            selected={localTodo.status === value}
+            onClick={() => handleStatusSelect(value as Todo['status'])}
+            disabled={isUpdating}
+          >
+            {label}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Menu
+        anchorEl={priorityAnchor}
+        open={Boolean(priorityAnchor)}
+        onClose={() => setPriorityAnchor(null)}
+      >
+        {Object.entries(priorityLabels).map(([value, label]) => {
+          const numericValue = Number(value) as Todo['priority'];
+          return (
+            <MenuItem
+              key={value}
+              selected={localTodo.priority === numericValue}
+              onClick={() => handlePrioritySelect(numericValue)}
+              disabled={isUpdating}
+            >
+              {label}
+            </MenuItem>
+          );
+        })}
+      </Menu>
+
+      <Popover
+        anchorEl={dueDateAnchor}
+        open={Boolean(dueDateAnchor)}
+        onClose={() => setDueDateAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Box p={2} display="flex" flexDirection="column" gap={2}>
+          <TextField
+            label="Due Date"
+            type="date"
+            value={dueDateInput}
+            onChange={(event) => setDueDateInput(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+            size="small"
+          />
+          <Box display="flex" gap={1}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleDueDateSave}
+              disabled={isUpdating || !dueDateInput}
+            >
+              Save
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleDueDateClear}
+              disabled={isUpdating || (!localTodo.due_date && !dueDateInput)}
+            >
+              Clear
+            </Button>
+          </Box>
+        </Box>
+      </Popover>
     </Card>
   );
 };
