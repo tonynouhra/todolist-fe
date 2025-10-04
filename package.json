@@ -21,9 +21,12 @@
     "axios": "^1.12.2",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",
+    "i18next": "^25.5.3",
+    "i18next-browser-languagedetector": "^8.2.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.62.0",
+    "react-i18next": "^16.0.0",
     "react-router-dom": "^7.9.1",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
@@ -32,8 +35,8 @@
     "zod": "^4.1.8"
   },
   "scripts": {
-    "start": "NODE_OPTIONS='--max-old-space-size=4096' react-scripts start",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' react-scripts build",
+    "start": "NODE_OPTIONS='--max-old-space-size=8192' react-scripts start",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint src --ext .ts,.tsx",

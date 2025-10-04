@@ -1,0 +1,107 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "reset": "Reset",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "actions": "Actions"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "todos": "Todos",
+    "projects": "Projects",
+    "aiAssistant": "AI Assistant",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "settings": {
+    "title": "Settings",
+    "resetToDefaults": "Reset to Defaults",
+    "resetting": "Resetting...",
+    "lastUpdated": "Last updated",
+    "allChangesSaved": "All changes are saved automatically",
+    "general": {
+      "title": "General",
+      "description": "Manage your general preferences",
+      "language": "Language",
+      "languageDescription": "Choose your preferred language",
+      "timezone": "Timezone",
+      "timezoneDescription": "Set your local timezone for accurate date and time display"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize how the app looks",
+      "theme": "Theme",
+      "themeDescription": "Choose your preferred color scheme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Manage how you receive notifications",
+      "enableNotifications": "Enable Notifications",
+      "enableNotificationsDescription": "Master switch for all notifications",
+      "emailNotifications": "Email Notifications",
+      "emailNotificationsDescription": "Receive notifications via email for important updates",
+      "pushNotifications": "Push Notifications",
+      "pushNotificationsDescription": "Receive push notifications in your browser"
+    },
+    "messages": {
+      "updateSuccess": "Settings updated successfully!",
+      "updateError": "Failed to update settings. Please try again.",
+      "resetError": "Failed to reset settings. Please try again.",
+      "notificationUpdateSuccess": "Notification settings updated successfully!",
+      "notificationUpdateError": "Failed to update notification settings. Please try again."
+    }
+  },
+  "dialogs": {
+    "resetSettings": {
+      "title": "Reset Settings",
+      "message": "Are you sure you want to reset all settings to defaults? This action cannot be undone.",
+      "confirm": "Reset",
+      "cancel": "Cancel"
+    },
+    "deleteTodo": {
+      "title": "Delete Todo",
+      "message": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    }
+  },
+  "todos": {
+    "title": "Todos",
+    "createNew": "Create New Todo",
+    "noTodos": "No todos yet",
+    "completed": "Completed",
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "dueDate": "Due Date",
+    "priority": "Priority",
+    "status": "Status",
+    "description": "Description",
+    "subtasks": "Subtasks",
+    "addSubtask": "Add Subtask"
+  },
+  "projects": {
+    "title": "Projects",
+    "createNew": "Create New Project",
+    "noProjects": "No projects yet",
+    "description": "Description",
+    "todos": "Todos",
+    "members": "Members"
+  }
+}

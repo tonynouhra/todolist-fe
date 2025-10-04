@@ -1,0 +1,107 @@
+{
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجح",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "save": "حفظ",
+    "reset": "إعادة تعيين",
+    "close": "إغلاق",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "search": "بحث",
+    "filter": "تصفية",
+    "sort": "ترتيب",
+    "actions": "إجراءات"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "todos": "المهام",
+    "projects": "المشاريع",
+    "aiAssistant": "المساعد الذكي",
+    "settings": "الإعدادات",
+    "profile": "الملف الشخصي",
+    "logout": "تسجيل الخروج"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "resetToDefaults": "إعادة تعيين إلى الافتراضي",
+    "resetting": "جاري إعادة التعيين...",
+    "lastUpdated": "آخر تحديث",
+    "allChangesSaved": "يتم حفظ جميع التغييرات تلقائياً",
+    "general": {
+      "title": "عام",
+      "description": "إدارة تفضيلاتك العامة",
+      "language": "اللغة",
+      "languageDescription": "اختر لغتك المفضلة",
+      "timezone": "المنطقة الزمنية",
+      "timezoneDescription": "حدد منطقتك الزمنية المحلية لعرض التاريخ والوقت بدقة"
+    },
+    "appearance": {
+      "title": "المظهر",
+      "description": "تخصيص مظهر التطبيق",
+      "theme": "السمة",
+      "themeDescription": "اختر نظام الألوان المفضل لديك",
+      "light": "فاتح",
+      "dark": "داكن",
+      "system": "النظام"
+    },
+    "notifications": {
+      "title": "الإشعارات",
+      "description": "إدارة كيفية تلقي الإشعارات",
+      "enableNotifications": "تفعيل الإشعارات",
+      "enableNotificationsDescription": "المفتاح الرئيسي لجميع الإشعارات",
+      "emailNotifications": "إشعارات البريد الإلكتروني",
+      "emailNotificationsDescription": "تلقي الإشعارات عبر البريد الإلكتروني للتحديثات المهمة",
+      "pushNotifications": "الإشعارات الفورية",
+      "pushNotificationsDescription": "تلقي الإشعارات الفورية في متصفحك"
+    },
+    "messages": {
+      "updateSuccess": "تم تحديث الإعدادات بنجاح!",
+      "updateError": "فشل تحديث الإعدادات. يرجى المحاولة مرة أخرى.",
+      "resetError": "فشلت إعادة تعيين الإعدادات. يرجى المحاولة مرة أخرى.",
+      "notificationUpdateSuccess": "تم تحديث إعدادات الإشعارات بنجاح!",
+      "notificationUpdateError": "فشل تحديث إعدادات الإشعارات. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "dialogs": {
+    "resetSettings": {
+      "title": "إعادة تعيين الإعدادات",
+      "message": "هل أنت متأكد من أنك تريد إعادة تعيين جميع الإعدادات إلى الافتراضية؟ لا يمكن التراجع عن هذا الإجراء.",
+      "confirm": "إعادة تعيين",
+      "cancel": "إلغاء"
+    },
+    "deleteTodo": {
+      "title": "حذف المهمة",
+      "message": "هل أنت متأكد من أنك تريد حذف \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+      "confirm": "حذف",
+      "cancel": "إلغاء"
+    }
+  },
+  "todos": {
+    "title": "المهام",
+    "createNew": "إنشاء مهمة جديدة",
+    "noTodos": "لا توجد مهام بعد",
+    "completed": "مكتمل",
+    "pending": "قيد الانتظار",
+    "inProgress": "قيد التنفيذ",
+    "dueDate": "تاريخ الاستحقاق",
+    "priority": "الأولوية",
+    "status": "الحالة",
+    "description": "الوصف",
+    "subtasks": "المهام الفرعية",
+    "addSubtask": "إضافة مهمة فرعية"
+  },
+  "projects": {
+    "title": "المشاريع",
+    "createNew": "إنشاء مشروع جديد",
+    "noProjects": "لا توجد مشاريع بعد",
+    "description": "الوصف",
+    "todos": "المهام",
+    "members": "الأعضاء"
+  }
+}

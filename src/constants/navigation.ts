@@ -10,6 +10,7 @@ import {
 // Navigation Item Interface
 export interface NavigationItem {
   text: string;
+  translationKey: string; // i18n translation key
   icon: React.ReactElement;
   path: string;
   disabled?: boolean;
@@ -24,42 +25,45 @@ export interface SecondaryNavigationItem extends NavigationItem {
 // Main Navigation Items
 export const navigationItems: NavigationItem[] = [
   {
-    text: 'Dashboard',
+    text: 'Dashboard', // Fallback text
+    translationKey: 'nav.dashboard',
     icon: React.createElement(DashboardIcon),
     path: '/dashboard',
     showInFooter: true,
   },
   {
     text: 'Todos',
+    translationKey: 'nav.todos',
     icon: React.createElement(TodoIcon),
     path: '/todos',
     showInFooter: true,
   },
   {
     text: 'Projects',
+    translationKey: 'nav.projects',
     icon: React.createElement(ProjectIcon),
     path: '/projects',
     showInFooter: true,
   },
   {
     text: 'AI Assistant',
+    translationKey: 'nav.aiAssistant',
     icon: React.createElement(AIIcon),
     path: '/ai',
     disabled: true, // Will be enabled when AI features are implemented
     showInFooter: false, // Don't show disabled items in footer
   },
-];
-
-// Secondary Navigation Items
-export const secondaryNavigationItems: SecondaryNavigationItem[] = [
   {
     text: 'Settings',
+    translationKey: 'nav.settings',
     icon: React.createElement(SettingsIcon),
     path: '/settings',
-    disabled: true, // Will be enabled in future tasks
-    showInFooter: false,
+    showInFooter: true, // Show Settings in both sidebar and footer navigation
   },
 ];
+
+// Secondary Navigation Items (kept for future use)
+export const secondaryNavigationItems: SecondaryNavigationItem[] = [];
 
 // Get navigation items that should appear in footer
 export const getFooterNavigationItems = (): NavigationItem[] => {

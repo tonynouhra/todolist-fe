@@ -9,10 +9,13 @@ import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { PaletteMode } from '@mui/material';
 import { lightTheme, darkTheme } from '../styles/theme';
 
+type ThemeMode = 'light' | 'dark' | 'system';
+
 interface ThemeContextType {
   mode: PaletteMode;
+  themeMode: ThemeMode;
   toggleTheme: () => void;
-  setTheme: (mode: PaletteMode) => void;
+  setThemeMode: (mode: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -22,59 +25,61 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  // Initialize theme from localStorage or system preference
-  const [mode, setMode] = useState<PaletteMode>(() => {
-    const savedTheme = localStorage.getItem('theme-mode') as PaletteMode;
-    if (savedTheme) {
-      return savedTheme;
-    }
-
-    // Check system preference
-    if (
-      window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    ) {
-      return 'dark';
-    }
-
-    return 'light';
+  // Initialize theme mode (light/dark/system) from localStorage or default to system
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(() => {
+    const savedTheme = localStorage.getItem('theme-mode') as ThemeMode;
+    return savedTheme || 'system';
   });
 
-  // Listen for system theme changes
+  // Get the actual palette mode based on theme mode and system preference
+  const getActualMode = (theme: ThemeMode): PaletteMode => {
+    if (theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+    }
+    return theme as PaletteMode;
+  };
+
+  const [mode, setMode] = useState<PaletteMode>(() => getActualMode(themeMode));
+
+  // Listen for system theme changes when in system mode
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const handleChange = (e: MediaQueryListEvent) => {
-      // Only update if user hasn't manually set a preference
-      const savedTheme = localStorage.getItem('theme-mode');
-      if (!savedTheme) {
+      // Only update if in system mode
+      if (themeMode === 'system') {
         setMode(e.matches ? 'dark' : 'light');
       }
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  }, [themeMode]);
 
-  // Save theme preference to localStorage
+  // Save theme preference to localStorage and update actual mode
   useEffect(() => {
-    localStorage.setItem('theme-mode', mode);
-  }, [mode]);
+    localStorage.setItem('theme-mode', themeMode);
+    setMode(getActualMode(themeMode));
+  }, [themeMode]);
 
   const toggleTheme = () => {
     setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+    setThemeModeState((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
 
-  const setTheme = (newMode: PaletteMode) => {
-    setMode(newMode);
+  const setThemeMode = (newMode: ThemeMode) => {
+    setThemeModeState(newMode);
   };
 
   const theme = mode === 'light' ? lightTheme : darkTheme;
 
   const contextValue: ThemeContextType = {
     mode,
+    themeMode,
     toggleTheme,
-    setTheme,
+    setThemeMode,
   };
 
   return (

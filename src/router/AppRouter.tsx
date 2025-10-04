@@ -33,6 +33,11 @@ const ProjectsPage = React.lazy(() =>
 const AIPage = React.lazy(() =>
   import('../pages/ai/AIPage').then((module) => ({ default: module.AIPage }))
 );
+const SettingsPage = React.lazy(() =>
+  import('../components/Settings').then((module) => ({
+    default: module.SettingsPage,
+  }))
+);
 
 // Loading component with accessibility features
 const LoadingFallback: React.FC<{ message?: string }> = ({
@@ -132,6 +137,18 @@ export const AppRouter: React.FC = () => {
                   }
                 >
                   <AIPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Suspense
+                  fallback={<LoadingFallback message="Loading settings..." />}
+                >
+                  <SettingsPage />
                 </Suspense>
               </ProtectedRoute>
             }

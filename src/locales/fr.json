@@ -1,0 +1,107 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "reset": "Réinitialiser",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier",
+    "actions": "Actions"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "todos": "Tâches",
+    "projects": "Projets",
+    "aiAssistant": "Assistant IA",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "logout": "Déconnexion"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "resetToDefaults": "Réinitialiser par défaut",
+    "resetting": "Réinitialisation...",
+    "lastUpdated": "Dernière mise à jour",
+    "allChangesSaved": "Tous les changements sont enregistrés automatiquement",
+    "general": {
+      "title": "Général",
+      "description": "Gérer vos préférences générales",
+      "language": "Langue",
+      "languageDescription": "Choisissez votre langue préférée",
+      "timezone": "Fuseau horaire",
+      "timezoneDescription": "Définissez votre fuseau horaire local pour un affichage précis de la date et de l'heure"
+    },
+    "appearance": {
+      "title": "Apparence",
+      "description": "Personnaliser l'apparence de l'application",
+      "theme": "Thème",
+      "themeDescription": "Choisissez votre jeu de couleurs préféré",
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Gérer la façon dont vous recevez les notifications",
+      "enableNotifications": "Activer les notifications",
+      "enableNotificationsDescription": "Interrupteur principal pour toutes les notifications",
+      "emailNotifications": "Notifications par e-mail",
+      "emailNotificationsDescription": "Recevoir des notifications par e-mail pour les mises à jour importantes",
+      "pushNotifications": "Notifications push",
+      "pushNotificationsDescription": "Recevoir des notifications push dans votre navigateur"
+    },
+    "messages": {
+      "updateSuccess": "Paramètres mis à jour avec succès!",
+      "updateError": "Échec de la mise à jour des paramètres. Veuillez réessayer.",
+      "resetError": "Échec de la réinitialisation des paramètres. Veuillez réessayer.",
+      "notificationUpdateSuccess": "Paramètres de notification mis à jour avec succès!",
+      "notificationUpdateError": "Échec de la mise à jour des paramètres de notification. Veuillez réessayer."
+    }
+  },
+  "dialogs": {
+    "resetSettings": {
+      "title": "Réinitialiser les paramètres",
+      "message": "Êtes-vous sûr de vouloir réinitialiser tous les paramètres par défaut? Cette action ne peut pas être annulée.",
+      "confirm": "Réinitialiser",
+      "cancel": "Annuler"
+    },
+    "deleteTodo": {
+      "title": "Supprimer la tâche",
+      "message": "Êtes-vous sûr de vouloir supprimer \"{{name}}\"? Cette action ne peut pas être annulée.",
+      "confirm": "Supprimer",
+      "cancel": "Annuler"
+    }
+  },
+  "todos": {
+    "title": "Tâches",
+    "createNew": "Créer une nouvelle tâche",
+    "noTodos": "Aucune tâche pour le moment",
+    "completed": "Terminé",
+    "pending": "En attente",
+    "inProgress": "En cours",
+    "dueDate": "Date d'échéance",
+    "priority": "Priorité",
+    "status": "Statut",
+    "description": "Description",
+    "subtasks": "Sous-tâches",
+    "addSubtask": "Ajouter une sous-tâche"
+  },
+  "projects": {
+    "title": "Projets",
+    "createNew": "Créer un nouveau projet",
+    "noProjects": "Aucun projet pour le moment",
+    "description": "Description",
+    "todos": "Tâches",
+    "members": "Membres"
+  }
+}

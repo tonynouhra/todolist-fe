@@ -668,6 +668,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               isTransitioning: true,
               transitionType: 'sidebar',
             }));
+
+            // Safety timeout to re-enable pointer events if callback doesn't fire
+            setTimeout(() => {
+              if (mainContentRef.current) {
+                mainContentRef.current.style.pointerEvents = 'auto';
+              }
+            }, 500); // 500ms should be enough for any transition
           }}
           onTransitionEnd={() => {
             // Re-enable interactions when sidebar transition completes
@@ -871,6 +878,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               isTransitioning: true,
               transitionType: 'sidebar',
             }));
+
+            // Safety timeout to re-enable pointer events if callback doesn't fire
+            setTimeout(() => {
+              if (mainContentRef.current) {
+                mainContentRef.current.style.pointerEvents = 'auto';
+              }
+            }, 500); // 500ms should be enough for any transition
           }}
           onTransitionEnd={() => {
             // Re-enable interactions after mobile sidebar transition

@@ -12,6 +12,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import {
   animationConfig,
   createTransition,
@@ -43,6 +44,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
   onTransitionStart,
   onTransitionEnd,
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -255,7 +257,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                 {item.icon}
               </ListItemIcon>
               <ListItemText
-                primary={item.text}
+                primary={t(item.translationKey)}
                 slotProps={{
                   primary: {
                     fontSize: '0.875rem',
@@ -445,6 +447,8 @@ const SidebarComponent: React.FC<SidebarProps> = ({
           left: 0,
           height: '100vh',
           zIndex: theme.zIndex.drawer,
+          // Prevent blocking clicks when closed
+          pointerEvents: open ? 'auto' : 'none',
           // Improve visual flow with enhanced shadow and border handling
           '&::after': {
             content: '""',

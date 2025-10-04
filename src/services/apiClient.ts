@@ -16,8 +16,17 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor for authentication
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    // Note: This will be used in components with useAuth hook
-    // For now, we'll set up the structure
+    // Get Clerk token from window if available
+    if (typeof window !== 'undefined' && (window as any).Clerk) {
+      try {
+        const token = await (window as any).Clerk.session?.getToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Error getting auth token:', error);
+      }
+    }
     return config;
   },
   (error) => {
