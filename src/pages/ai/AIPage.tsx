@@ -87,8 +87,8 @@ export const AIPage: React.FC = () => {
   return (
     <AppLayout>
       <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Card sx={{ mb: 3, p: 3 }}>
-          <Box display="flex" alignItems="center" gap={2} mb={2}>
+        <Box sx={{ mb: 3 }}>
+          <Box display="flex" alignItems="center" gap={2} mb={1}>
             <AIIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />
             <Typography variant="h4" component="h1">
               AI Assistant
@@ -116,7 +116,7 @@ export const AIPage: React.FC = () => {
               sx={{ mt: 1 }}
             />
           )}
-        </Card>
+        </Box>
 
         {error && (
           <Alert severity="warning" sx={{ mb: 3 }}>
