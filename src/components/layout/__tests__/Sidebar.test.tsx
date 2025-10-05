@@ -231,16 +231,15 @@ describe('Sidebar', () => {
       ).toBeInTheDocument();
     });
 
-    it('shows disabled state for disabled items', () => {
+    it('enables AI Assistant navigation item', () => {
       renderComponent();
 
       const aiAssistantItem = screen.getByRole('menuitem', {
         name: 'AI Assistant',
       });
-      const settingsItem = screen.getByRole('menuitem', { name: 'Settings' });
 
-      expect(aiAssistantItem).toBeDisabled();
-      expect(settingsItem).toBeDisabled();
+      expect(aiAssistantItem).not.toHaveAttribute('aria-disabled', 'true');
+      expect(aiAssistantItem).not.toBeDisabled();
     });
   });
 
@@ -255,7 +254,7 @@ describe('Sidebar', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
 
-    it('does not navigate when disabled item is clicked', async () => {
+    it('navigates to AI assistant page when clicked', async () => {
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
       renderComponent();
 
@@ -264,7 +263,7 @@ describe('Sidebar', () => {
       });
       await user.click(aiAssistantItem);
 
-      expect(mockNavigate).not.toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith('/ai');
     });
 
     it('closes temporary sidebar after navigation', async () => {

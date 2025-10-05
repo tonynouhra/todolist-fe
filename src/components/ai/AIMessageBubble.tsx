@@ -18,13 +18,40 @@ import {
   ThumbDown as ThumbDownIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
+import type {
+  GeneratedSubtask,
+  GeneratedTodo,
+  FileAnalysisResponse,
+  TaskOptimizationResponse,
+} from '../../types';
+
+export type AIMessageData =
+  | {
+      type: 'subtasks';
+      parentTaskTitle: string;
+      subtasks: GeneratedSubtask[];
+      autoCreated?: boolean;
+    }
+  | {
+      type: 'todo_suggestions';
+      requestDescription: string;
+      suggestions: GeneratedTodo[];
+    }
+  | {
+      type: 'analysis';
+      analysis: FileAnalysisResponse;
+    }
+  | {
+      type: 'optimization';
+      optimization: TaskOptimizationResponse;
+    };
 
 export interface AIMessage {
   id: string;
   type: 'user' | 'ai' | 'system';
   content: string;
   timestamp: Date;
-  data?: any; // For structured data like generated todos
+  data?: AIMessageData; // Structured payload rendered by AIResponseHandler
   isLoading?: boolean;
   error?: string;
 }
@@ -83,7 +110,7 @@ export const AIMessageBubble: React.FC<AIMessageBubbleProps> = ({
     if (isSystem) {
       return <SystemIcon sx={{ color: theme.palette.grey[600] }} />;
     }
-    return <AIIcon sx={{ color: theme.palette.secondary.main }} />;
+    return <AIIcon sx={{ color: theme.palette.primary.main }} />;
   };
 
   const handleCopy = () => {
@@ -114,7 +141,7 @@ export const AIMessageBubble: React.FC<AIMessageBubbleProps> = ({
             height: 32,
             backgroundColor: isUser
               ? theme.palette.primary.light
-              : theme.palette.secondary.light,
+              : theme.palette.primary.light,
           }}
         >
           {getAvatar()}
@@ -169,6 +196,7 @@ export const AIMessageBubble: React.FC<AIMessageBubbleProps> = ({
             <Box
               display="flex"
               justifyContent="flex-end"
+              alignItems="center"
               gap={0.5}
               mt={1}
               sx={{ opacity: 0.7 }}
@@ -177,7 +205,10 @@ export const AIMessageBubble: React.FC<AIMessageBubbleProps> = ({
                 <IconButton
                   size="small"
                   onClick={handleCopy}
-                  sx={{ color: 'inherit' }}
+                  sx={{
+                    color: 'inherit',
+                    p: 0.5,
+                  }}
                 >
                   <CopyIcon fontSize="small" />
                 </IconButton>
@@ -189,7 +220,10 @@ export const AIMessageBubble: React.FC<AIMessageBubbleProps> = ({
                     <IconButton
                       size="small"
                       onClick={() => onFeedback(message.id, true)}
-                      sx={{ color: 'inherit' }}
+                      sx={{
+                        color: 'inherit',
+                        p: 0.5,
+                      }}
                     >
                       <ThumbUpIcon fontSize="small" />
                     </IconButton>
@@ -199,7 +233,10 @@ export const AIMessageBubble: React.FC<AIMessageBubbleProps> = ({
                     <IconButton
                       size="small"
                       onClick={() => onFeedback(message.id, false)}
-                      sx={{ color: 'inherit' }}
+                      sx={{
+                        color: 'inherit',
+                        p: 0.5,
+                      }}
                     >
                       <ThumbDownIcon fontSize="small" />
                     </IconButton>

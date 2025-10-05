@@ -1,203 +1,97 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
   Box,
+  Button,
   Card,
   CardContent,
-  Typography,
-  Button,
   Chip,
   IconButton,
   List,
   ListItem,
-  ListItemText,
   ListItemIcon,
   ListItemSecondaryAction,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Alert,
+  ListItemText,
+  Stack,
+  Typography,
   useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
+  AutoAwesome as AIIcon,
   CheckCircle as DoneIcon,
-  RadioButtonUnchecked as TodoIcon,
-  PlayArrow as InProgressIcon,
   ExpandMore as ExpandMoreIcon,
   Flag as PriorityIcon,
-  AutoAwesome as AIIcon,
+  Lightbulb as ImprovementIcon,
+  PlayArrow as InProgressIcon,
+  RadioButtonUnchecked as TodoIcon,
+  Schedule as TimeIcon,
 } from '@mui/icons-material';
-import { GeneratedSubtask } from '../../types';
+import type {
+  GeneratedSubtask,
+  GeneratedTodo,
+  FileAnalysisResponse,
+  TaskOptimizationResponse,
+} from '../../types';
+import type { AIMessageData } from './AIMessageBubble';
 
 interface AIResponseHandlerProps {
-  type: 'subtasks' | 'todos' | 'analysis' | 'improvement';
-  data: any;
-  onCreateTodos?: (todos: Partial<GeneratedSubtask>[]) => void;
-  onEditTodo?: (todo: Partial<GeneratedSubtask>) => void;
+  data: AIMessageData;
+  onCreateTodos?: (todos: Array<GeneratedSubtask | GeneratedTodo>) => void;
   onApproveAll?: () => void;
   className?: string;
 }
 
-interface EditTodoDialogProps {
-  open: boolean;
-  todo: Partial<GeneratedSubtask> | null;
-  onClose: () => void;
-  onSave: (todo: Partial<GeneratedSubtask>) => void;
-}
-
-const priorityColors = {
-  1: '#4caf50', // Low
-  2: '#8bc34a', // Low-Medium
-  3: '#ff9800', // Medium
-  4: '#f44336', // High
-  5: '#d32f2f', // Critical
+const PRIORITY_COLORS: Record<number, string> = {
+  1: '#4caf50',
+  2: '#8bc34a',
+  3: '#ff9800',
+  4: '#f44336',
+  5: '#d32f2f',
 };
 
-const priorityLabels = {
-  1: 'Low',
-  2: 'Low-Medium',
+const PRIORITY_LABELS: Record<number, string> = {
+  1: 'Very Low',
+  2: 'Low',
   3: 'Medium',
   4: 'High',
   5: 'Critical',
 };
 
-const EditTodoDialog: React.FC<EditTodoDialogProps> = ({
-  open,
-  todo,
-  onClose,
-  onSave,
-}) => {
-  const [editedTodo, setEditedTodo] = useState<Partial<GeneratedSubtask>>(
-    todo || {}
-  );
-
-  const handleSave = () => {
-    onSave(editedTodo);
-    onClose();
-  };
-
-  if (!todo) return null;
-
+const getPriorityChip = (priority?: number) => {
+  if (!priority) return null;
+  const color = PRIORITY_COLORS[priority];
+  const label = PRIORITY_LABELS[priority] ?? `Priority ${priority}`;
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Edit Task</DialogTitle>
-      <DialogContent>
-        <Box display="flex" flexDirection="column" gap={2} mt={1}>
-          <TextField
-            label="Title"
-            value={editedTodo.title || ''}
-            onChange={(e) =>
-              setEditedTodo({ ...editedTodo, title: e.target.value })
-            }
-            fullWidth
-          />
-          <TextField
-            label="Description"
-            value={editedTodo.description || ''}
-            onChange={(e) =>
-              setEditedTodo({ ...editedTodo, description: e.target.value })
-            }
-            fullWidth
-            multiline
-            rows={3}
-          />
-          <TextField
-            label="Priority (1-5)"
-            type="number"
-            value={editedTodo.priority || 3}
-            onChange={(e) =>
-              setEditedTodo({
-                ...editedTodo,
-                priority: Number(e.target.value),
-              })
-            }
-            fullWidth
-            inputProps={{ min: 1, max: 5 }}
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained">
-          Save
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <Chip
+      icon={<PriorityIcon />}
+      label={label}
+      size="small"
+      sx={{
+        backgroundColor: color,
+        color: 'white',
+      }}
+    />
   );
 };
 
-export const AIResponseHandler: React.FC<AIResponseHandlerProps> = ({
-  type,
-  data,
-  onCreateTodos,
-  onEditTodo,
-  onApproveAll,
-  className,
-}) => {
+const renderSummaryChip = (label: string, value?: string | number) => {
+  if (value === undefined || value === null) return null;
+  return <Chip label={`${label}: ${value}`} size="small" variant="outlined" />;
+};
+
+const SubtasksSection: React.FC<{
+  subtasks: GeneratedSubtask[];
+  parentTitle: string;
+  autoCreated?: boolean;
+  className?: string;
+}> = ({ subtasks, parentTitle, autoCreated, className }) => {
   const theme = useTheme();
-  const [selectedTodos, setSelectedTodos] = useState<Set<string>>(new Set());
-  const [editDialog, setEditDialog] = useState<{
-    open: boolean;
-    todo: Partial<GeneratedSubtask> | null;
-  }>({ open: false, todo: null });
 
-  const handleToggleSelect = (todoId: string) => {
-    const newSelected = new Set(selectedTodos);
-    if (newSelected.has(todoId)) {
-      newSelected.delete(todoId);
-    } else {
-      newSelected.add(todoId);
-    }
-    setSelectedTodos(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedTodos.size === data.length) {
-      setSelectedTodos(new Set());
-    } else {
-      setSelectedTodos(
-        new Set(data.map((_: any, index: number) => index.toString()))
-      );
-    }
-  };
-
-  const handleCreateSelected = () => {
-    const selectedItems = data.filter((_: any, index: number) =>
-      selectedTodos.has(index.toString())
-    );
-    if (selectedItems.length > 0 && onCreateTodos) {
-      onCreateTodos(selectedItems);
-    }
-  };
-
-  const handleEditTodo = (todo: Partial<GeneratedSubtask>, index: number) => {
-    setEditDialog({ open: true, todo: { ...todo, id: index.toString() } });
-  };
-
-  const handleSaveEdit = (editedTodo: Partial<GeneratedSubtask>) => {
-    if (onEditTodo) {
-      onEditTodo(editedTodo);
-    }
-  };
-
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-      case 'done':
-        return <DoneIcon color="success" />;
-      case 'in_progress':
-        return <InProgressIcon color="primary" />;
-      default:
-        return <TodoIcon color="action" />;
-    }
-  };
-
-  const renderSubtasks = () => (
+  return (
     <Card className={className}>
       <CardContent>
         <Box
@@ -206,246 +100,495 @@ export const AIResponseHandler: React.FC<AIResponseHandlerProps> = ({
           alignItems="center"
           mb={2}
         >
-          <Box display="flex" alignItems="center" gap={1}>
+          <Box display="flex" alignItems="center" gap={1.5}>
             <AIIcon color="primary" />
-            <Typography variant="h6">AI Generated Subtasks</Typography>
+            <Typography variant="h6">Generated Subtasks</Typography>
+            {renderSummaryChip('Count', subtasks.length)}
+          </Box>
+          {autoCreated && (
             <Chip
-              label={`${data.length} tasks`}
+              label="Saved to todo"
+              color="success"
               size="small"
-              color="primary"
               variant="outlined"
             />
-          </Box>
-          <Box display="flex" gap={1}>
-            <Button size="small" onClick={handleSelectAll} variant="outlined">
-              {selectedTodos.size === data.length
-                ? 'Deselect All'
-                : 'Select All'}
-            </Button>
-            {selectedTodos.size > 0 && (
-              <Button
-                size="small"
-                variant="contained"
-                onClick={handleCreateSelected}
-                startIcon={<AddIcon />}
-              >
-                Create Selected ({selectedTodos.size})
-              </Button>
-            )}
-            {onApproveAll && (
-              <Button
-                size="small"
-                variant="contained"
-                color="success"
-                onClick={onApproveAll}
-                startIcon={<DoneIcon />}
-              >
-                Create All
-              </Button>
-            )}
-          </Box>
+          )}
         </Box>
 
+        <Typography variant="body2" color="text.secondary" mb={2}>
+          {`These subtasks were created for "${parentTitle}"${
+            autoCreated ? ' and added to your workspace automatically.' : '.'
+          }`}
+        </Typography>
+
         <List dense>
-          {data.map((subtask: GeneratedSubtask, index: number) => (
+          {subtasks.map((subtask, index) => (
             <ListItem
-              key={index}
+              key={`${subtask.title}-${index}`}
               sx={{
                 border: `1px solid ${theme.palette.divider}`,
                 borderRadius: 1,
                 mb: 1,
-                backgroundColor: selectedTodos.has(index.toString())
-                  ? theme.palette.action.selected
-                  : 'transparent',
               }}
             >
               <ListItemIcon>
-                <IconButton
+                <Chip
+                  label={`#${subtask.order}`}
                   size="small"
-                  onClick={() => handleToggleSelect(index.toString())}
-                >
-                  {getStatusIcon(subtask.status)}
-                </IconButton>
+                  variant="outlined"
+                />
               </ListItemIcon>
-
               <ListItemText
                 primary={
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="subtitle2">{subtask.title}</Typography>
-                    {subtask.priority && (
-                      <Chip
-                        icon={<PriorityIcon />}
-                        label={
-                          priorityLabels[
-                            subtask.priority as keyof typeof priorityLabels
-                          ]
-                        }
-                        size="small"
-                        sx={{
-                          backgroundColor:
-                            priorityColors[
-                              subtask.priority as keyof typeof priorityColors
-                            ],
-                          color: 'white',
-                          fontSize: '0.75rem',
-                        }}
-                      />
-                    )}
+                    {getPriorityChip(subtask.priority)}
                   </Box>
                 }
                 secondary={
-                  <Box>
+                  <Stack spacing={0.5} mt={0.5}>
                     {subtask.description && (
                       <Typography variant="body2" color="text.secondary">
                         {subtask.description}
                       </Typography>
                     )}
-                    {subtask.estimated_duration && (
-                      <Typography variant="caption" color="text.secondary">
-                        Estimated: {subtask.estimated_duration}
+                    {subtask.estimated_time && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="flex"
+                        alignItems="center"
+                        gap={0.5}
+                      >
+                        <TimeIcon fontSize="inherit" />
+                        {subtask.estimated_time}
                       </Typography>
                     )}
-                  </Box>
+                  </Stack>
                 }
               />
-
-              <ListItemSecondaryAction>
-                <IconButton
-                  size="small"
-                  onClick={() => handleEditTodo(subtask, index)}
-                >
-                  <EditIcon />
-                </IconButton>
-              </ListItemSecondaryAction>
             </ListItem>
           ))}
         </List>
       </CardContent>
     </Card>
   );
+};
 
-  const renderFileAnalysis = () => (
+const TodoSuggestionsSection: React.FC<{
+  suggestions: GeneratedTodo[];
+  requestDescription: string;
+  onCreateTodos?: (todos: GeneratedTodo[]) => void;
+  onApproveAll?: () => void;
+  className?: string;
+}> = ({
+  suggestions,
+  requestDescription,
+  onCreateTodos,
+  onApproveAll,
+  className,
+}) => {
+  const theme = useTheme();
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  const toggleSelection = (index: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const handleCreate = (items: GeneratedTodo[]) => {
+    if (!onCreateTodos) return;
+    onCreateTodos(items);
+  };
+
+  const createSelected = () => {
+    if (!selected.size || !onCreateTodos) return;
+    const items = suggestions.filter((_, index) => selected.has(index));
+    handleCreate(items);
+  };
+
+  const toggleSelectAll = () => {
+    setSelected((prev) =>
+      prev.size === suggestions.length
+        ? new Set()
+        : new Set(suggestions.map((_, index) => index))
+    );
+  };
+
+  return (
     <Card className={className}>
       <CardContent>
-        <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <AIIcon color="primary" />
-          <Typography variant="h6">File Analysis Results</Typography>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+        >
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <AIIcon color="primary" />
+            <Typography variant="h6">Todo Suggestions</Typography>
+            {renderSummaryChip('Total', suggestions.length)}
+          </Box>
+          <Stack direction="row" gap={1}>
+            <Button size="small" variant="outlined" onClick={toggleSelectAll}>
+              {selected.size === suggestions.length
+                ? 'Deselect All'
+                : 'Select All'}
+            </Button>
+            {selected.size > 0 && (
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={createSelected}
+              >
+                {`Create Selected (${selected.size})`}
+              </Button>
+            )}
+          </Stack>
         </Box>
 
-        {data.analysis && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            {data.analysis}
-          </Alert>
-        )}
+        <Typography variant="body2" color="text.secondary" mb={2}>
+          {`Prompt: "${requestDescription}"`}
+        </Typography>
 
-        {data.summary && (
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">Summary</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2">{data.summary}</Typography>
-            </AccordionDetails>
-          </Accordion>
-        )}
+        <List dense>
+          {suggestions.map((todo, index) => {
+            const isSelected = selected.has(index);
+            return (
+              <ListItem
+                key={`${todo.title}-${index}`}
+                sx={{
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  mb: 1,
+                  backgroundColor: isSelected
+                    ? theme.palette.action.selected
+                    : 'transparent',
+                }}
+              >
+                <ListItemIcon>
+                  <IconButton
+                    size="small"
+                    onClick={() => toggleSelection(index)}
+                  >
+                    {isSelected ? (
+                      <InProgressIcon color="primary" />
+                    ) : (
+                      <TodoIcon color="action" />
+                    )}
+                  </IconButton>
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography variant="subtitle2">{todo.title}</Typography>
+                      {getPriorityChip(todo.priority)}
+                      {todo.category && (
+                        <Chip
+                          label={todo.category}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
+                    </Box>
+                  }
+                  secondary={
+                    <Stack spacing={0.5} mt={0.5}>
+                      {todo.description && (
+                        <Typography variant="body2" color="text.secondary">
+                          {todo.description}
+                        </Typography>
+                      )}
+                      {todo.estimated_time && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="flex"
+                          alignItems="center"
+                          gap={0.5}
+                        >
+                          <TimeIcon fontSize="inherit" />
+                          {todo.estimated_time}
+                        </Typography>
+                      )}
+                    </Stack>
+                  }
+                />
+                <ListItemSecondaryAction>
+                  {onCreateTodos && (
+                    <Button
+                      size="small"
+                      startIcon={<AddIcon />}
+                      onClick={() => handleCreate([todo])}
+                    >
+                      Create
+                    </Button>
+                  )}
+                </ListItemSecondaryAction>
+              </ListItem>
+            );
+          })}
+        </List>
 
-        {data.suggested_todos && data.suggested_todos.length > 0 && (
-          <Box mt={2}>
-            <Typography variant="subtitle1" gutterBottom>
-              Extracted Tasks:
-            </Typography>
+        {onApproveAll && (
+          <Box display="flex" justifyContent="flex-end" mt={2}>
+            <Button startIcon={<DoneIcon />} onClick={onApproveAll}>
+              Create All
+            </Button>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const FileAnalysisSection: React.FC<{
+  analysis: FileAnalysisResponse;
+  onCreateTodos?: (todos: GeneratedTodo[]) => void;
+  className?: string;
+}> = ({ analysis, onCreateTodos, className }) => (
+  <Card className={className}>
+    <CardContent>
+      <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+        <AIIcon color="primary" />
+        <Typography variant="h6">File Analysis</Typography>
+        {renderSummaryChip(
+          'Confidence',
+          `${Math.round(analysis.confidence_score * 100)}%`
+        )}
+      </Box>
+
+      {analysis.summary && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {analysis.summary}
+        </Alert>
+      )}
+
+      {analysis.key_points.length > 0 && (
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle1">Key Points</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
             <List dense>
-              {data.suggested_todos.map(
-                (todo: GeneratedSubtask, index: number) => (
-                  <ListItem key={index} divider>
-                    <ListItemText
-                      primary={todo.title}
-                      secondary={todo.description}
-                    />
+              {analysis.key_points.map((point, index) => (
+                <ListItem key={`${point}-${index}`}>
+                  <ListItemIcon>
+                    <ImprovementIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText primary={point} />
+                </ListItem>
+              ))}
+            </List>
+          </AccordionDetails>
+        </Accordion>
+      )}
+
+      {analysis.suggested_tasks.length > 0 && (
+        <Accordion defaultExpanded sx={{ mt: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle1">Suggested Tasks</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <List dense>
+              {analysis.suggested_tasks.map((task, index) => (
+                <ListItem key={`${task}-${index}`} divider>
+                  <ListItemText primary={task} />
+                  {onCreateTodos && (
                     <ListItemSecondaryAction>
                       <Button
                         size="small"
                         startIcon={<AddIcon />}
-                        onClick={() => onCreateTodos && onCreateTodos([todo])}
+                        onClick={() =>
+                          onCreateTodos([{ title: task, priority: 3 }])
+                        }
                       >
                         Create
                       </Button>
                     </ListItemSecondaryAction>
-                  </ListItem>
-                )
-              )}
+                  )}
+                </ListItem>
+              ))}
             </List>
-          </Box>
-        )}
+          </AccordionDetails>
+        </Accordion>
+      )}
+    </CardContent>
+  </Card>
+);
 
-        {data.recommendations && data.recommendations.length > 0 && (
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1">Recommendations</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <List dense>
-                {data.recommendations.map((rec: string, index: number) => (
-                  <ListItem key={index}>
-                    <ListItemText primary={rec} />
-                  </ListItem>
-                ))}
-              </List>
-            </AccordionDetails>
-          </Accordion>
-        )}
-      </CardContent>
-    </Card>
+const OptimizationSection: React.FC<{
+  optimization: TaskOptimizationResponse;
+  onApproveAll?: () => void;
+  className?: string;
+}> = ({ optimization, onApproveAll, className }) => {
+  const hasChanges = Boolean(
+    optimization.optimized_title || optimization.optimized_description
   );
-
-  const renderImprovement = () => (
-    <Card className={className}>
-      <CardContent>
-        <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <AIIcon color="primary" />
-          <Typography variant="h6">Improved Description</Typography>
-        </Box>
-
-        <Alert severity="success" sx={{ mb: 2 }}>
-          <Typography variant="body1">{data.improved_description}</Typography>
-        </Alert>
-
-        <Box display="flex" gap={1}>
-          <Button
-            variant="contained"
-            onClick={() => onApproveAll && onApproveAll()}
-          >
-            Apply Changes
-          </Button>
-          <Button variant="outlined">Make Further Changes</Button>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-
-  const renderContent = () => {
-    switch (type) {
-      case 'subtasks':
-      case 'todos':
-        return renderSubtasks();
-      case 'analysis':
-        return renderFileAnalysis();
-      case 'improvement':
-        return renderImprovement();
-      default:
-        return <Alert severity="info">Unknown response type: {type}</Alert>;
-    }
-  };
 
   return (
-    <>
-      {renderContent()}
-      <EditTodoDialog
-        open={editDialog.open}
-        todo={editDialog.todo}
-        onClose={() => setEditDialog({ open: false, todo: null })}
-        onSave={handleSaveEdit}
-      />
-    </>
+    <Card className={className}>
+      <CardContent>
+        <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+          <AIIcon color="primary" />
+          <Typography variant="h6">Task Optimization</Typography>
+          {renderSummaryChip('Type', optimization.optimization_type)}
+        </Box>
+
+        {!hasChanges && (
+          <Alert severity="info">
+            The AI did not suggest any changes for this task.
+          </Alert>
+        )}
+
+        {hasChanges && (
+          <Stack spacing={2}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  gutterBottom
+                >
+                  Original
+                </Typography>
+                {optimization.original_title && (
+                  <Typography variant="h6" gutterBottom>
+                    {optimization.original_title}
+                  </Typography>
+                )}
+                {optimization.original_description && (
+                  <Typography variant="body2" color="text.secondary">
+                    {optimization.original_description}
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card variant="outlined" sx={{ borderColor: 'success.light' }}>
+              <CardContent>
+                <Typography
+                  variant="subtitle2"
+                  color="success.main"
+                  gutterBottom
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
+                >
+                  <ImprovementIcon fontSize="small" /> Optimized
+                </Typography>
+                {optimization.optimized_title && (
+                  <Typography variant="h6" gutterBottom>
+                    {optimization.optimized_title}
+                  </Typography>
+                )}
+                {optimization.optimized_description && (
+                  <Typography variant="body2" color="text.secondary">
+                    {optimization.optimized_description}
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+
+            {optimization.improvements.length > 0 && (
+              <Alert
+                severity="success"
+                icon={<ImprovementIcon fontSize="small" />}
+              >
+                <Typography variant="subtitle2" gutterBottom>
+                  Improvements
+                </Typography>
+                <List dense>
+                  {optimization.improvements.map((item, index) => (
+                    <ListItem key={`${item}-${index}`}>
+                      <ListItemText primary={item} />
+                    </ListItem>
+                  ))}
+                </List>
+              </Alert>
+            )}
+
+            {onApproveAll && (
+              <Box display="flex" justifyContent="flex-end">
+                <Button
+                  variant="contained"
+                  startIcon={<DoneIcon />}
+                  onClick={onApproveAll}
+                >
+                  Apply Changes
+                </Button>
+              </Box>
+            )}
+          </Stack>
+        )}
+      </CardContent>
+    </Card>
   );
+};
+
+export const AIResponseHandler: React.FC<AIResponseHandlerProps> = ({
+  data,
+  onCreateTodos,
+  onApproveAll,
+  className,
+}) => {
+  const content = useMemo(() => {
+    switch (data.type) {
+      case 'subtasks':
+        return (
+          <SubtasksSection
+            subtasks={data.subtasks}
+            parentTitle={data.parentTaskTitle}
+            autoCreated={data.autoCreated}
+            className={className}
+          />
+        );
+      case 'todo_suggestions':
+        return (
+          <TodoSuggestionsSection
+            suggestions={data.suggestions}
+            requestDescription={data.requestDescription}
+            onCreateTodos={
+              onCreateTodos as ((todos: GeneratedTodo[]) => void) | undefined
+            }
+            onApproveAll={onApproveAll}
+            className={className}
+          />
+        );
+      case 'analysis':
+        return (
+          <FileAnalysisSection
+            analysis={data.analysis}
+            onCreateTodos={
+              onCreateTodos as ((todos: GeneratedTodo[]) => void) | undefined
+            }
+            className={className}
+          />
+        );
+      case 'optimization':
+        return (
+          <OptimizationSection
+            optimization={data.optimization}
+            onApproveAll={onApproveAll}
+            className={className}
+          />
+        );
+      default:
+        return (
+          <Alert severity="info">
+            I prepared a response, but I do not know how to display it yet.
+          </Alert>
+        );
+    }
+  }, [className, data, onApproveAll, onCreateTodos]);
+
+  return <>{content}</>;
 };

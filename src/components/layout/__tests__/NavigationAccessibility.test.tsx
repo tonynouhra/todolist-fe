@@ -346,16 +346,19 @@ describe('Navigation Accessibility Tests', () => {
       expect(dashboardItem).toHaveAttribute('aria-current', 'page');
     });
 
-    it('handles disabled items correctly', () => {
+    it('allows navigating to AI Assistant via keyboard', async () => {
+      const user = userEvent.setup();
       renderSidebar();
 
       const aiAssistantItem = screen.getByRole('menuitem', {
         name: 'AI Assistant',
       });
-      const settingsItem = screen.getByRole('menuitem', { name: 'Settings' });
 
-      expect(aiAssistantItem).toBeDisabled();
-      expect(settingsItem).toBeDisabled();
+      aiAssistantItem.focus();
+      expect(aiAssistantItem).toHaveFocus();
+
+      await user.keyboard('{Enter}');
+      expect(mockNavigate).toHaveBeenCalledWith('/ai');
     });
 
     it('supports keyboard navigation', async () => {

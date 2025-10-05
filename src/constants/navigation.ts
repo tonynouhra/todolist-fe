@@ -50,8 +50,7 @@ export const navigationItems: NavigationItem[] = [
     translationKey: 'nav.aiAssistant',
     icon: React.createElement(AIIcon),
     path: '/ai',
-    disabled: true, // Will be enabled when AI features are implemented
-    showInFooter: false, // Don't show disabled items in footer
+    showInFooter: true,
   },
   {
     text: 'Settings',

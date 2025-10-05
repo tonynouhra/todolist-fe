@@ -1,4 +1,10 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+} from 'react';
 import {
   Box,
   TextField,
@@ -13,23 +19,28 @@ import {
 import {
   Send as SendIcon,
   AttachFile as AttachIcon,
+  AddComment as NewChatIcon,
   Clear as ClearIcon,
+  SmartToy as AIIcon,
 } from '@mui/icons-material';
 import { AIMessageBubble } from './AIMessageBubble';
+import type { AIMessageData } from './AIMessageBubble';
 import { AIResponseHandler } from './AIResponseHandler';
-import { useAIChat } from '../../hooks/ai/useAIChat';
+import type { UseAIChatReturn } from '../../hooks/ai/useAIChat';
 import { useAICommands } from '../../hooks/ai/useAICommands';
 import { AICommandParser } from '../../utils/ai/commandParser';
-import { useCreateTodo } from '../../hooks/useTodos';
-import { GeneratedSubtask } from '../../types';
+import { useCreateTodo, useTodos } from '../../hooks/useTodos';
+import { GeneratedSubtask, GeneratedTodo, Todo } from '../../types';
 
 interface AIChatInterfaceProps {
+  chat: UseAIChatReturn;
   height?: string | number;
   onTodoCreated?: (todo: any) => void;
   className?: string;
 }
 
 export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
+  chat,
   height = '600px',
   onTodoCreated,
   className,
@@ -42,14 +53,33 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Hooks
-  const chat = useAIChat();
   const parser = new AICommandParser();
-  const commands = useAICommands({ chat, parser });
+  const { data: todosResponse } = useTodos({ limit: 100 });
+  const availableTodos: Todo[] = todosResponse?.data ?? [];
+
+  const commands = useAICommands({ chat, parser, todos: availableTodos });
   const createTodoMutation = useCreateTodo();
+
+  const activeSession = useMemo(
+    () => chat.sessions.find((session) => session.id === chat.activeSessionId),
+    [chat.sessions, chat.activeSessionId]
+  );
+
+  useEffect(() => {
+    setAttachedFile(null);
+    setInputValue('');
+  }, [chat.activeSessionId]);
 
   // Handle message submission
   const handleSubmit = useCallback(async () => {
-    if (!inputValue.trim() && !attachedFile) return;
+    if (!inputValue.trim()) {
+      if (attachedFile) {
+        chat.addSystemMessage(
+          'Please include a brief message describing how I should use the attached file.'
+        );
+      }
+      return;
+    }
 
     const message = inputValue.trim();
     setInputValue('');
@@ -62,7 +92,7 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
     } catch (error) {
       console.error('Failed to execute command:', error);
     }
-  }, [inputValue, attachedFile, commands]);
+  }, [inputValue, attachedFile, commands, chat]);
 
   // Handle Enter key press
   const handleKeyPress = (event: React.KeyboardEvent) => {
@@ -116,14 +146,21 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   };
 
   // Handle todo creation from AI responses
-  const handleCreateTodos = async (todos: Partial<GeneratedSubtask>[]) => {
+  const handleCreateTodos = async (
+    todos: Array<Partial<GeneratedSubtask> | Partial<GeneratedTodo>>
+  ) => {
     try {
       const createdTodos = [];
       for (const todo of todos) {
+        const priorityValue = Math.min(
+          Math.max(Number(todo.priority ?? 3), 1),
+          5
+        ) as 1 | 2 | 3 | 4 | 5;
+
         const result = await createTodoMutation.mutateAsync({
           title: todo.title || 'Untitled Task',
           description: todo.description,
-          priority: todo.priority || 3,
+          priority: priorityValue,
           status: 'todo',
           ai_generated: true,
         });
@@ -161,9 +198,17 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
     );
   };
 
+  const getApproveAllHandler = (data: AIMessageData) => {
+    if (data.type === 'todo_suggestions') {
+      return () => handleCreateTodos(data.suggestions);
+    }
+
+    return undefined;
+  };
+
   // Clear chat
-  const handleClearChat = () => {
-    chat.clearChat();
+  const handleStartNewChat = () => {
+    chat.startNewSession();
     setAttachedFile(null);
     setInputValue('');
   };
@@ -213,18 +258,31 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
         sx={{
           p: 2,
           borderBottom: `1px solid ${theme.palette.divider}`,
-          backgroundColor: theme.palette.grey[50],
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? alpha(theme.palette.primary.main, 0.08)
+              : theme.palette.grey[50],
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}
       >
-        <Typography variant="h6" color="primary">
-          AI Assistant
-        </Typography>
-        <Tooltip title="Clear chat">
-          <IconButton size="small" onClick={handleClearChat}>
-            <ClearIcon />
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <AIIcon sx={{ color: theme.palette.primary.main, fontSize: 28 }} />
+          <Box>
+            <Typography variant="h6" color="primary">
+              AI Assistant
+            </Typography>
+            {activeSession && (
+              <Typography variant="caption" color="text.secondary">
+                {activeSession.title}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+        <Tooltip title="Start new chat">
+          <IconButton size="small" onClick={handleStartNewChat}>
+            <NewChatIcon />
           </IconButton>
         </Tooltip>
       </Box>
@@ -249,10 +307,9 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
           >
             {message.data && (
               <AIResponseHandler
-                type={message.data.type}
-                data={message.data.data}
+                data={message.data}
                 onCreateTodos={handleCreateTodos}
-                onApproveAll={() => handleCreateTodos(message.data.data)}
+                onApproveAll={getApproveAllHandler(message.data)}
               />
             )}
           </AIMessageBubble>
@@ -360,11 +417,21 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
                 sx={{
                   px: 1,
                   py: 0.5,
-                  backgroundColor: theme.palette.grey[100],
-                  borderRadius: 1,
+                  borderRadius: 999,
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.primary.main, 0.15)
+                      : alpha(theme.palette.primary.light, 0.25),
+                  color:
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.primary.light
+                      : theme.palette.primary.dark,
                   cursor: 'pointer',
                   '&:hover': {
-                    backgroundColor: theme.palette.grey[200],
+                    backgroundColor:
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.primary.main, 0.25)
+                        : alpha(theme.palette.primary.light, 0.35),
                   },
                 }}
                 onClick={() => setInputValue(suggestion)}
