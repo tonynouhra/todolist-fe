@@ -272,12 +272,23 @@ const TodoSuggestionsSection: React.FC<{
                   backgroundColor: isSelected
                     ? theme.palette.action.selected
                     : 'transparent',
+                  flexDirection: 'column',
+                  alignItems: 'stretch',
+                  py: 1.5,
                 }}
               >
-                <ListItemIcon>
+                {/* Top row: checkbox, title, and create button */}
+                <Box
+                  display="flex"
+                  alignItems="flex-start"
+                  gap={1}
+                  width="100%"
+                  mb={1}
+                >
                   <IconButton
                     size="small"
                     onClick={() => toggleSelection(index)}
+                    sx={{ mt: -0.5 }}
                   >
                     {isSelected ? (
                       <InProgressIcon color="primary" />
@@ -285,23 +296,52 @@ const TodoSuggestionsSection: React.FC<{
                       <TodoIcon color="action" />
                     )}
                   </IconButton>
-                </ListItemIcon>
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="subtitle2">{todo.title}</Typography>
-                      {getPriorityChip(todo.priority)}
-                      {todo.category && (
-                        <Chip
-                          label={todo.category}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
-                    </Box>
-                  }
-                  secondary={
-                    <Stack spacing={0.5} mt={0.5}>
+
+                  <Box flex={1} minWidth={0}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ wordBreak: 'break-word' }}
+                    >
+                      {todo.title}
+                    </Typography>
+                  </Box>
+
+                  {onCreateTodos && (
+                    <Button
+                      size="small"
+                      startIcon={<AddIcon />}
+                      onClick={() => handleCreate([todo])}
+                      sx={{ flexShrink: 0 }}
+                    >
+                      Create
+                    </Button>
+                  )}
+                </Box>
+
+                {/* Chips row */}
+                {(todo.priority || todo.category) && (
+                  <Box
+                    display="flex"
+                    gap={1}
+                    flexWrap="wrap"
+                    ml={5}
+                    mb={todo.description || todo.estimated_time ? 1 : 0}
+                  >
+                    {getPriorityChip(todo.priority)}
+                    {todo.category && (
+                      <Chip
+                        label={todo.category}
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
+                  </Box>
+                )}
+
+                {/* Description and time */}
+                {(todo.description || todo.estimated_time) && (
+                  <Box ml={5}>
+                    <Stack spacing={0.5}>
                       {todo.description && (
                         <Typography variant="body2" color="text.secondary">
                           {todo.description}
@@ -320,19 +360,8 @@ const TodoSuggestionsSection: React.FC<{
                         </Typography>
                       )}
                     </Stack>
-                  }
-                />
-                <ListItemSecondaryAction>
-                  {onCreateTodos && (
-                    <Button
-                      size="small"
-                      startIcon={<AddIcon />}
-                      onClick={() => handleCreate([todo])}
-                    >
-                      Create
-                    </Button>
-                  )}
-                </ListItemSecondaryAction>
+                  </Box>
+                )}
               </ListItem>
             );
           })}
