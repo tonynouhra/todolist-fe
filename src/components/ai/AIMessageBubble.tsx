@@ -86,11 +86,14 @@ export const AIMessageBubble: React.FC<AIMessageBubbleProps> = ({
 
     if (isSystem) {
       return {
-        backgroundColor: theme.palette.grey[100],
+        backgroundColor:
+          theme.palette.mode === 'dark'
+            ? theme.palette.grey[900]
+            : theme.palette.grey[50],
         color: theme.palette.text.secondary,
-        alignSelf: 'center',
-        borderRadius: '12px',
-        border: `1px solid ${theme.palette.grey[300]}`,
+        alignSelf: 'flex-start',
+        borderRadius: '20px 20px 20px 4px',
+        border: `1px solid ${theme.palette.divider}`,
       };
     }
 
@@ -129,9 +132,8 @@ export const AIMessageBubble: React.FC<AIMessageBubbleProps> = ({
       gap={1}
       mb={2}
       sx={{
-        maxWidth: isSystem ? '60%' : '80%',
-        alignSelf: isUser ? 'flex-end' : isSystem ? 'center' : 'flex-start',
-        mx: isSystem ? 'auto' : 0,
+        maxWidth: '80%',
+        alignSelf: isUser ? 'flex-end' : 'flex-start',
       }}
     >
       {!isSystem && (
