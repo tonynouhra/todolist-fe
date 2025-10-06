@@ -1,0 +1,312 @@
+name: Frontend CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, staging]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20.x'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Stage 1: Code Quality & Testing
+  test-and-quality:
+    name: Test & Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🎨 Code Formatting Check (Prettier)
+        run: npx prettier --check "src/**/*.{ts,tsx,json,css,md}"
+
+      - name: 🔍 Lint Code (ESLint)
+        run: npm run lint
+
+      - name: 📝 TypeScript Type Check
+        run: npx tsc --noEmit
+
+      - name: 🧪 Run Unit Tests
+        run: npm test -- --coverage --watchAll=false --passWithNoTests
+        env:
+          CI: true
+
+      - name: ♿ Run Accessibility Tests
+        run: npm run test:a11y -- --watchAll=false --passWithNoTests
+        env:
+          CI: true
+
+      - name: 🔒 Security Audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: 📊 Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage/lcov.info
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # Stage 2: Build Application
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test-and-quality
+    if: github.event_name == 'push'
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      short_sha: ${{ steps.version.outputs.short_sha }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Build Application
+        run: npm run build
+        env:
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || 'http://localhost:8000' }}
+          REACT_APP_CLERK_PUBLISHABLE_KEY: ${{ secrets.REACT_APP_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
+          REACT_APP_ENVIRONMENT: production
+          CI: false
+
+      - name: 📏 Check Bundle Size
+        run: |
+          SIZE_MB=$(du -sm build | cut -f1)
+          echo "📦 Bundle size: ${SIZE_MB}MB"
+
+          THRESHOLD=5
+          if [ $SIZE_MB -gt $THRESHOLD ]; then
+            echo "❌ Bundle size (${SIZE_MB}MB) exceeds threshold (${THRESHOLD}MB)"
+            exit 1
+          fi
+          echo "✅ Bundle size is within acceptable limits"
+
+      - name: 🏷️ Generate Version
+        id: version
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date +%Y%m%d.%H%M%S)
+
+          if [ "$BRANCH_NAME" == "main" ]; then
+            VERSION="v1.0.${GITHUB_RUN_NUMBER}"
+          elif [ "$BRANCH_NAME" == "staging" ]; then
+            VERSION="v1.0.${GITHUB_RUN_NUMBER}-rc"
+          elif [ "$BRANCH_NAME" == "develop" ]; then
+            VERSION="dev-${TIMESTAMP}"
+          else
+            VERSION="feature-${BRANCH_NAME//\//-}-${SHORT_SHA}"
+          fi
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "📌 Generated version: ${VERSION}"
+
+      - name: 💾 Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ steps.version.outputs.version }}
+          path: ./build
+          retention-days: 7
+
+  # Stage 3: Build & Push Docker Image
+  docker-build-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [test-and-quality, build]
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Generate Docker Tags
+        id: meta
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          SHORT_SHA="${{ needs.build.outputs.short_sha }}"
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+
+          TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SHORT_SHA}"
+
+          if [ "$BRANCH_NAME" == "main" ]; then
+            TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+            TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable"
+          elif [ "$BRANCH_NAME" == "develop" ]; then
+            TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:develop"
+          elif [ "$BRANCH_NAME" == "staging" ]; then
+            TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging"
+          fi
+
+          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "🏷️ Docker tags: ${TAGS}"
+
+      - name: 🏗️ Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: |
+            org.opencontainers.image.title=TodoList Frontend
+            org.opencontainers.image.description=React Frontend for TodoList Application
+            org.opencontainers.image.version=${{ needs.build.outputs.version }}
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          build-args: |
+            REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL || 'http://localhost:8000' }}
+            REACT_APP_CLERK_PUBLISHABLE_KEY=${{ secrets.REACT_APP_CLERK_PUBLISHABLE_KEY }}
+            REACT_APP_ENVIRONMENT=production
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 🔐 Security Scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: 📤 Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Stage 4: Create Release (main branch only)
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build, docker-build-push]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🎉 Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.build.outputs.version }}
+          name: Release ${{ needs.build.outputs.version }}
+          body: |
+            ## 🚀 Frontend Release ${{ needs.build.outputs.version }}
+
+            ### 📦 Docker Image
+            ```bash
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.version }}
+            ```
+
+            ### 🚢 Deploy
+            ```bash
+            docker run -d -p 80:80 \
+              -e REACT_APP_API_URL=YOUR_API_URL \
+              -e REACT_APP_CLERK_PUBLISHABLE_KEY=YOUR_KEY \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.version }}
+            ```
+
+            ### 📋 Changes
+            - **Commit**: ${{ github.sha }}
+            - **Branch**: ${{ github.ref_name }}
+            - **Build Number**: ${{ github.run_number }}
+            - **Author**: ${{ github.actor }}
+
+            ### 🏷️ Available Tags
+            - `${{ needs.build.outputs.version }}` (specific version)
+            - `latest` (latest stable release)
+            - `stable` (production ready)
+            - `${{ needs.build.outputs.short_sha }}` (commit sha)
+          draft: false
+          prerelease: false
+
+  # Summary
+  pipeline-summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [test-and-quality, build, docker-build-push]
+    if: always()
+
+    steps:
+      - name: 📊 Generate Pipeline Summary
+        run: |
+          echo "## 🎯 Frontend CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### 📋 Pipeline Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Test & Quality | ${{ needs.test-and-quality.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏗️ Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🐳 Docker | ${{ needs.docker-build-push.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.build.result }}" == "success" ]]; then
+            echo "### 🏷️ Version Information" >> $GITHUB_STEP_SUMMARY
+            echo "- **Version**: \`${{ needs.build.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **SHA**: \`${{ needs.build.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Run**: #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "${{ needs.docker-build-push.result }}" == "success" ]]; then
+            echo "### 🐳 Docker Image" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
+            echo "- \`${{ needs.build.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`${{ needs.build.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+            if [[ "${{ github.ref_name }}" == "main" ]]; then
+              echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
+              echo "- \`stable\`" >> $GITHUB_STEP_SUMMARY
+            elif [[ "${{ github.ref_name }}" == "develop" ]]; then
+              echo "- \`develop\`" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
