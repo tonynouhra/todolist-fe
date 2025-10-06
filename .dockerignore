@@ -1,0 +1,94 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Production build
+build/
+dist/
+
+# Testing
+coverage/
+.nyc_output/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__/
+__mocks__/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Environment files (will be passed as build args)
+.env*
+!.env.example
+
+# Documentation
+*.md
+docs/
+README*
+CHANGELOG*
+LICENSE*
+*_SUMMARY.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Cache
+.cache/
+.eslintcache
+.stylelintcache
+
+# Reports
+lighthouse-report.html
+bundle-report.html
+
+# Scripts
+scripts/
+
+# Husky
+.husky/
